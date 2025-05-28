@@ -3,7 +3,7 @@ import "./App.css";
 
 const initialLists = [
   { title: "Do zrobienia", tasks: ["Zadanie 1", "Zadanie 2"] },
-  { title: "W toku", tasks: [] },
+  { title: "W toku2", tasks: [] },
   { title: "Zrobione", tasks: [] },
 ];
 
