@@ -11,6 +11,30 @@ const TaskBoard = ({ user }) => {
   const [newBoardTitle, setNewBoardTitle] = useState("");
   const [showCollaboratorModal, setShowCollaboratorModal] = useState(false);
   const [lastUpdate, setLastUpdate] = useState(Date.now());
+  const [forceUpdate, setForceUpdate] = useState(0);
+
+  // Function to clean up all drag states
+  const cleanupDragStates = () => {
+    document.querySelectorAll('.list-table').forEach(list => {
+      list.classList.remove('drag-over');
+      list.classList.remove('dragging');
+    });
+    document.querySelectorAll('.task').forEach(task => {
+      task.classList.remove('dragging');
+    });
+  };
+
+  // Add global drag end handler
+  useEffect(() => {
+    const handleGlobalDragEnd = () => {
+      cleanupDragStates();
+    };
+
+    document.addEventListener('dragend', handleGlobalDragEnd);
+    return () => {
+      document.removeEventListener('dragend', handleGlobalDragEnd);
+    };
+  }, []);
 
   // Load user's own boards
   useEffect(() => {
@@ -242,6 +266,23 @@ const TaskBoard = ({ user }) => {
       )
     };
     syncBoardChanges(updatedBoard, isSharedBoard);
+
+    // Update the selected task's comments
+    if (selectedTask && selectedTask.listIndex === listIndex && selectedTask.taskIndex === taskIndex) {
+      setSelectedTask(prev => ({
+        ...prev,
+        task: {
+          ...prev.task,
+          comments: [...(prev.task.comments || []), {
+            id: Date.now().toString(),
+            text: comment,
+            userId: user.id,
+            userEmail: user.email,
+            createdAt: Date.now()
+          }]
+        }
+      }));
+    }
   };
 
   const removeComment = (listIndex, taskIndex, commentId) => {
@@ -272,6 +313,17 @@ const TaskBoard = ({ user }) => {
       )
     };
     syncBoardChanges(updatedBoard, isSharedBoard);
+
+    // Update the selected task's comments
+    if (selectedTask && selectedTask.listIndex === listIndex && selectedTask.taskIndex === taskIndex) {
+      setSelectedTask(prev => ({
+        ...prev,
+        task: {
+          ...prev.task,
+          comments: prev.task.comments.filter(c => c.id !== commentId)
+        }
+      }));
+    }
   };
 
   const toggleTaskCompletion = (listIndex, taskIndex) => {
@@ -487,18 +539,7 @@ const TaskBoard = ({ user }) => {
 
   // Function to get ordered boards
   const getOrderedBoards = () => {
-    // Filter out any undefined indices and map to actual boards
-    const orderedOwned = boardOrder.owned
-      .filter(index => index < boards.length)
-      .map(index => boards[index])
-      .filter(Boolean);
-
-    const orderedShared = boardOrder.shared
-      .filter(index => index < sharedBoards.length)
-      .map(index => sharedBoards[index])
-      .filter(Boolean);
-
-    return [...orderedOwned, ...orderedShared];
+    return [...boards, ...sharedBoards];
   };
 
   const removeBoard = (boardIndex) => {
@@ -724,10 +765,207 @@ const TaskBoard = ({ user }) => {
     });
   };
 
+  const moveTask = (fromListIndex, toListIndex, fromTaskIndex, toTaskIndex) => {
+    const currentBoard = isSharedBoard ? sharedBoards[currentBoardIndex - boards.length] : boards[currentBoardIndex];
+
+    // Check if user is an observer
+    if (isSharedBoard) {
+      const userRole = currentBoard.collaborators.find(c => c.id === user.id)?.role;
+      if (userRole === 'observer') {
+        return; // Observers cannot move tasks
+      }
+    }
+
+    const updatedBoard = {
+      ...currentBoard,
+      lists: currentBoard.lists.map((list, idx) => {
+        if (idx === fromListIndex && idx === toListIndex) {
+          // Reordering within the same list
+          const tasks = [...list.tasks];
+          const [movedTask] = tasks.splice(fromTaskIndex, 1);
+          tasks.splice(toTaskIndex, 0, movedTask);
+          return { ...list, tasks };
+        } else if (idx === fromListIndex) {
+          // Remove task from source list
+          return {
+            ...list,
+            tasks: list.tasks.filter((_, i) => i !== fromTaskIndex)
+          };
+        } else if (idx === toListIndex) {
+          // Add task to target list
+          const taskToMove = currentBoard.lists[fromListIndex].tasks[fromTaskIndex];
+          const tasks = [...list.tasks];
+          tasks.splice(toTaskIndex, 0, taskToMove);
+          return { ...list, tasks };
+        }
+        return list;
+      })
+    };
+    syncBoardChanges(updatedBoard, isSharedBoard);
+  };
+
   return (
-    <div className="app-container">
-      <div className="header">
-        <h1>Witaj, {user.email}</h1>
+    <div className="app-container" key={forceUpdate}>
+      <div className="sidebar">
+        <div className="header">
+          <h1>Witaj, {user.email}</h1>
+        </div>
+        <div className="boards-navigation">
+          <div className="board-tabs">
+            {getOrderedBoards().map((board, index) => {
+              if (!board) return null;
+              const isSharedBoard = index >= boards.length;
+              return (
+                <div
+                  key={isSharedBoard ? `shared_${board.title}` : `owned_${board.title}`}
+                  className={`board-tab ${index === currentBoardIndex ? 'active' : ''}`}
+                  onClick={() => setCurrentBoardIndex(index)}
+                  draggable={true}
+                  onDragStart={(e) => {
+                    e.dataTransfer.setData('text/plain', index.toString());
+                    e.currentTarget.classList.add('dragging');
+                  }}
+                  onDragEnd={(e) => {
+                    cleanupDragStates();
+                  }}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    e.currentTarget.classList.add('drag-over');
+                  }}
+                  onDragLeave={(e) => {
+                    e.preventDefault();
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    const x = e.clientX;
+                    const y = e.clientY;
+                    if (x <= rect.left || x >= rect.right || y <= rect.top || y >= rect.bottom) {
+                      e.currentTarget.classList.remove('drag-over');
+                    }
+                  }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    cleanupDragStates();
+                    
+                    const fromIndex = parseInt(e.dataTransfer.getData('text/plain'));
+                    const toIndex = index;
+                    
+                    if (fromIndex !== toIndex) {
+                      // Determine if we're moving between owned and shared boards
+                      const isFromShared = fromIndex >= boards.length;
+                      const isToShared = toIndex >= boards.length;
+                      
+                      // Only allow reordering within the same section (owned or shared)
+                      if (isFromShared === isToShared) {
+                        if (isFromShared) {
+                          // Reordering shared boards
+                          const sharedFromIndex = fromIndex - boards.length;
+                          const sharedToIndex = toIndex - boards.length;
+                          
+                          // Update the shared boards array
+                          const newSharedBoards = [...sharedBoards];
+                          const [movedBoard] = newSharedBoards.splice(sharedFromIndex, 1);
+                          newSharedBoards.splice(sharedToIndex, 0, movedBoard);
+                          setSharedBoards(newSharedBoards);
+                          
+                          // Update the order
+                          const newSharedOrder = Array.from({ length: newSharedBoards.length }, (_, i) => i);
+                          setBoardOrder(prev => ({
+                            ...prev,
+                            shared: newSharedOrder
+                          }));
+
+                          // Update current board index if necessary
+                          if (currentBoardIndex === fromIndex) {
+                            setCurrentBoardIndex(toIndex);
+                          } else if (currentBoardIndex > fromIndex && currentBoardIndex <= toIndex) {
+                            setCurrentBoardIndex(currentBoardIndex - 1);
+                          } else if (currentBoardIndex < fromIndex && currentBoardIndex >= toIndex) {
+                            setCurrentBoardIndex(currentBoardIndex + 1);
+                          }
+                        } else {
+                          // Reordering owned boards
+                          // Update the boards array
+                          const newBoards = [...boards];
+                          const [movedBoard] = newBoards.splice(fromIndex, 1);
+                          newBoards.splice(toIndex, 0, movedBoard);
+                          setBoards(newBoards);
+                          
+                          // Update the order
+                          const newOwnedOrder = Array.from({ length: newBoards.length }, (_, i) => i);
+                          setBoardOrder(prev => ({
+                            ...prev,
+                            owned: newOwnedOrder
+                          }));
+
+                          // Update current board index if necessary
+                          if (currentBoardIndex === fromIndex) {
+                            setCurrentBoardIndex(toIndex);
+                          } else if (currentBoardIndex > fromIndex && currentBoardIndex <= toIndex) {
+                            setCurrentBoardIndex(currentBoardIndex - 1);
+                          } else if (currentBoardIndex < fromIndex && currentBoardIndex >= toIndex) {
+                            setCurrentBoardIndex(currentBoardIndex + 1);
+                          }
+                        }
+                      }
+                    }
+                  }}
+                >
+                  <div className="board-tab-content">
+                    <span>{board.title}</span>
+                    {isSharedBoard && board.ownerEmail && (
+                      <span className="shared-label">
+                        Udostępniona przez {board.ownerEmail}
+                      </span>
+                    )}
+                  </div>
+                  <div className="board-actions">
+                    {!isSharedBoard && boards.length > 1 && (
+                      <button
+                        className="remove-board-btn"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removeBoard(index);
+                        }}
+                      >
+                        ×
+                      </button>
+                    )}
+                    {isSharedBoard ? (
+                      <button
+                        className="leave-board-btn"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleLeaveBoard(index);
+                        }}
+                      >
+                        Opuść tablicę
+                      </button>
+                    ) : (
+                      <button
+                        className="share-board-btn"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShowCollaboratorModal(true);
+                        }}
+                      >
+                        Udostępnij
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+            <div className="new-board-form">
+              <input
+                type="text"
+                placeholder="Nowa tablica"
+                value={newBoardTitle}
+                onChange={(e) => setNewBoardTitle(e.target.value)}
+                maxLength="30"
+              />
+              <button onClick={addBoard}>+</button>
+            </div>
+          </div>
+        </div>
         <button 
           className="logout-button"
           onClick={handleLogout}
@@ -736,277 +974,276 @@ const TaskBoard = ({ user }) => {
         </button>
       </div>
 
-      <div className="boards-navigation">
-        <div className="board-tabs">
-          {getOrderedBoards().map((board, index) => {
-            if (!board) return null; // Skip if board is undefined
-            const isSharedBoard = index >= boards.length;
-            return (
-              <div
-                key={isSharedBoard ? `shared_${board.title}` : `owned_${board.title}`}
-                className={`board-tab ${index === currentBoardIndex ? 'active' : ''}`}
-                onClick={() => setCurrentBoardIndex(index)}
-                draggable={true}
-                onDragStart={(e) => {
-                  e.dataTransfer.setData('text/plain', index.toString());
-                  e.currentTarget.classList.add('dragging');
-                }}
-                onDragEnd={(e) => {
-                  e.currentTarget.classList.remove('dragging');
-                }}
-                onDragOver={(e) => {
-                  e.preventDefault();
-                  e.currentTarget.classList.add('drag-over');
-                }}
-                onDragLeave={(e) => {
-                  e.currentTarget.classList.remove('drag-over');
-                }}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  e.currentTarget.classList.remove('drag-over');
-                  const fromIndex = parseInt(e.dataTransfer.getData('text/plain'));
-                  if (fromIndex !== index) {
-                    moveBoard(fromIndex, index);
-                  }
-                }}
-              >
-                <div className="board-tab-content">
-                  <span>{board.title}</span>
-                  {isSharedBoard && board.ownerEmail && (
-                    <span className="shared-label">
-                      Udostępniona przez {board.ownerEmail}
-                    </span>
-                  )}
-                </div>
-                <div className="board-actions">
-                  {!isSharedBoard && boards.length > 1 && (
-                    <button
-                      className="remove-board-btn"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        removeBoard(index);
-                      }}
-                    >
-                      ×
-                    </button>
-                  )}
-                  {isSharedBoard ? (
-                    <button
-                      className="leave-board-btn"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleLeaveBoard(index);
-                      }}
-                    >
-                      Opuść tablicę
-                    </button>
-                  ) : (
-                    <button
-                      className="share-board-btn"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setShowCollaboratorModal(true);
-                      }}
-                    >
-                      Udostępnij
-                    </button>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-          <div className="new-board-form">
-            <input
-              type="text"
-              placeholder="Nowa tablica"
-              value={newBoardTitle}
-              onChange={(e) => setNewBoardTitle(e.target.value)}
-              maxLength="30"
-            />
-            <button onClick={addBoard}>+</button>
-          </div>
-        </div>
-      </div>
-
-      {currentBoard && (
-        <div className="board">
-          {currentBoard.lists
-            .slice()
-            .sort((a, b) => (a.order || 0) - (b.order || 0))
-            .map((list, listIndex) => (
-              <div 
-                className="list-table" 
-                key={listIndex}
-                draggable={!isSharedBoard || (isSharedBoard && currentBoard.collaborators.find(c => c.id === user.id)?.role !== 'observer')}
-                onDragStart={(e) => {
-                  e.dataTransfer.setData('text/plain', listIndex.toString());
-                  e.currentTarget.classList.add('dragging');
-                }}
-                onDragEnd={(e) => {
-                  e.currentTarget.classList.remove('dragging');
-                }}
-                onDragOver={(e) => {
-                  e.preventDefault();
-                  e.currentTarget.classList.add('drag-over');
-                }}
-                onDragLeave={(e) => {
-                  e.currentTarget.classList.remove('drag-over');
-                }}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  e.currentTarget.classList.remove('drag-over');
-                  const fromIndex = parseInt(e.dataTransfer.getData('text/plain'));
-                  const toIndex = listIndex;
-                  if (fromIndex !== toIndex) {
-                    moveList(fromIndex, toIndex);
-                  }
-                }}
-              >
-                <h3>
-                  {list.title}
+      <div className="main-content">
+        {currentBoard && (
+          <div className="board">
+            {currentBoard.lists
+              .slice()
+              .sort((a, b) => (a.order || 0) - (b.order || 0))
+              .map((list, listIndex) => (
+                <div 
+                  className="list-table" 
+                  key={listIndex}
+                  draggable={!isSharedBoard || (isSharedBoard && currentBoard.collaborators.find(c => c.id === user.id)?.role !== 'observer')}
+                  onDragStart={(e) => {
+                    e.dataTransfer.setData('text/plain', listIndex.toString());
+                    e.currentTarget.classList.add('dragging');
+                  }}
+                  onDragEnd={(e) => {
+                    cleanupDragStates();
+                  }}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    const taskData = e.dataTransfer.getData('application/json');
+                    if (taskData) {
+                      const { fromListIndex, fromTaskIndex } = JSON.parse(taskData);
+                      const rect = e.currentTarget.getBoundingClientRect();
+                      const y = e.clientY;
+                      const tasks = e.currentTarget.querySelectorAll('.task');
+                      
+                      // Remove existing indicators
+                      tasks.forEach(task => task.classList.remove('drag-over-top', 'drag-over-bottom'));
+                      
+                      // Find the task under the cursor
+                      let targetTask = null;
+                      let targetIndex = -1;
+                      
+                      tasks.forEach((task, index) => {
+                        const taskRect = task.getBoundingClientRect();
+                        if (y >= taskRect.top && y <= taskRect.bottom) {
+                          targetTask = task;
+                          targetIndex = index;
+                        }
+                      });
+                      
+                      if (targetTask) {
+                        const taskRect = targetTask.getBoundingClientRect();
+                        const threshold = taskRect.top + taskRect.height / 2;
+                        
+                        if (y < threshold) {
+                          targetTask.classList.add('drag-over-top');
+                        } else {
+                          targetTask.classList.add('drag-over-bottom');
+                        }
+                      }
+                    }
+                    e.currentTarget.classList.add('drag-over');
+                  }}
+                  onDragLeave={(e) => {
+                    e.preventDefault();
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    const x = e.clientX;
+                    const y = e.clientY;
+                    if (x <= rect.left || x >= rect.right || y <= rect.top || y >= rect.bottom) {
+                      e.currentTarget.classList.remove('drag-over');
+                      e.currentTarget.querySelectorAll('.task').forEach(task => {
+                        task.classList.remove('drag-over-top', 'drag-over-bottom');
+                      });
+                    }
+                  }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    cleanupDragStates();
+                    
+                    const taskData = e.dataTransfer.getData('application/json');
+                    if (taskData) {
+                      const { fromListIndex, fromTaskIndex } = JSON.parse(taskData);
+                      const y = e.clientY;
+                      const tasks = e.currentTarget.querySelectorAll('.task');
+                      
+                      // Find the task under the cursor
+                      let targetIndex = -1;
+                      let dropPosition = 'bottom';
+                      
+                      tasks.forEach((task, index) => {
+                        const taskRect = task.getBoundingClientRect();
+                        if (y >= taskRect.top && y <= taskRect.bottom) {
+                          targetIndex = index;
+                          const threshold = taskRect.top + taskRect.height / 2;
+                          dropPosition = y < threshold ? 'top' : 'bottom';
+                        }
+                      });
+                      
+                      if (targetIndex === -1) {
+                        // Drop at the end of the list
+                        targetIndex = tasks.length;
+                      }
+                      
+                      // Adjust target index based on drop position
+                      if (dropPosition === 'bottom' && targetIndex < tasks.length) {
+                        targetIndex++;
+                      }
+                      
+                      // Only move if it's a different position
+                      if (fromListIndex !== listIndex || fromTaskIndex !== targetIndex) {
+                        moveTask(fromListIndex, listIndex, fromTaskIndex, targetIndex);
+                      }
+                    } else {
+                      const fromIndex = parseInt(e.dataTransfer.getData('text/plain'));
+                      const toIndex = listIndex;
+                      if (fromIndex !== toIndex) {
+                        moveList(fromIndex, toIndex);
+                      }
+                    }
+                  }}
+                >
+                  <h3>
+                    {list.title}
+                    {(!isSharedBoard || (isSharedBoard && currentBoard.collaborators.find(c => c.id === user.id)?.role !== 'observer')) && (
+                      <button onClick={() => removeList(listIndex)} className="remove-list-btn">
+                        Usuń listę
+                      </button>
+                    )}
+                  </h3>
+                  <ul className="task-list">
+                    {list.tasks.map((task, taskIndex) => (
+                      <li 
+                        key={taskIndex} 
+                        className={`task ${task.completed ? 'completed' : ''}`}
+                        onClick={() => setSelectedTask({ listIndex, taskIndex, task })}
+                        draggable={!isSharedBoard || (isSharedBoard && currentBoard.collaborators.find(c => c.id === user.id)?.role !== 'observer')}
+                        onDragStart={(e) => {
+                          e.dataTransfer.setData('application/json', JSON.stringify({
+                            fromListIndex: listIndex,
+                            fromTaskIndex: taskIndex
+                          }));
+                          e.currentTarget.classList.add('dragging');
+                        }}
+                        onDragEnd={(e) => {
+                          cleanupDragStates();
+                        }}
+                      >
+                        <div className="task-content">
+                          <input
+                            type="checkbox"
+                            checked={task.completed}
+                            onChange={() => toggleTaskCompletion(listIndex, taskIndex)}
+                            disabled={isSharedBoard && currentBoard.collaborators.find(c => c.id === user.id)?.role === 'observer'}
+                            className="task-checkbox"
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                          <span className="task-text">{task.text}</span>
+                          {task.comments?.length > 0 && (
+                            <span className="comment-count">
+                              {task.comments.length} 💬
+                            </span>
+                          )}
+                        </div>
+                        {(!isSharedBoard || (isSharedBoard && currentBoard.collaborators.find(c => c.id === user.id)?.role !== 'observer')) && (
+                          <button 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              removeTask(listIndex, taskIndex);
+                            }}
+                          >
+                            Usuń
+                          </button>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
                   {(!isSharedBoard || (isSharedBoard && currentBoard.collaborators.find(c => c.id === user.id)?.role !== 'observer')) && (
-                    <button onClick={() => removeList(listIndex)} className="remove-list-btn">
-                      Usuń listę
-                    </button>
+                    <input
+                      className="task-input"
+                      placeholder="Nowe zadanie"
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          addTask(listIndex, e.target.value);
+                          e.target.value = '';
+                        }
+                      }}
+                    />
                   )}
-                </h3>
-                <ul className="task-list">
-                  {list.tasks.map((task, taskIndex) => (
-                    <li 
-                      key={taskIndex} 
-                      className={`task ${task.completed ? 'completed' : ''}`}
-                      onClick={() => setSelectedTask({ listIndex, taskIndex, task })}
-                    >
-                      <div className="task-content">
-                        <input
-                          type="checkbox"
-                          checked={task.completed}
-                          onChange={() => toggleTaskCompletion(listIndex, taskIndex)}
-                          disabled={isSharedBoard && currentBoard.collaborators.find(c => c.id === user.id)?.role === 'observer'}
-                          className="task-checkbox"
-                          onClick={(e) => e.stopPropagation()}
-                        />
-                        <span className="task-text">{task.text}</span>
-                        {task.comments?.length > 0 && (
-                          <span className="comment-count">
-                            {task.comments.length} 💬
-                          </span>
+                </div>
+              ))}
+            {(!isSharedBoard || (isSharedBoard && currentBoard.collaborators.find(c => c.id === user.id)?.role !== 'observer')) && (
+              <div className="list-table">
+                <input
+                  className="list-input"
+                  placeholder="Nowa lista"
+                  value={newListTitle}
+                  onChange={(e) => setNewListTitle(e.target.value)}
+                  maxLength="20"
+                />
+                <button className="add-list-btn" onClick={addList}>
+                  Dodaj listę
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {selectedTask && (
+          <div className="modal-overlay" onClick={() => setSelectedTask(null)}>
+            <div className="task-modal" onClick={(e) => e.stopPropagation()}>
+              <div className="task-modal-header">
+                <h3>{selectedTask.task.text}</h3>
+                <button className="close-btn" onClick={() => setSelectedTask(null)}>×</button>
+              </div>
+              <div className="comments-section">
+                <h4>Komentarze</h4>
+                <div className="comments-list">
+                  {selectedTask.task.comments?.map((comment) => (
+                    <div key={comment.id} className="comment">
+                      <div className="comment-header">
+                        <span className="comment-author">{comment.userEmail}</span>
+                        <span className="comment-date">{formatDate(comment.createdAt)}</span>
+                        {(comment.userId === user.id || (!isSharedBoard || currentBoard.ownerId === user.id)) && (
+                          <button
+                            className="remove-comment-btn"
+                            onClick={() => removeComment(selectedTask.listIndex, selectedTask.taskIndex, comment.id)}
+                          >
+                            Usuń
+                          </button>
                         )}
                       </div>
-                      {(!isSharedBoard || (isSharedBoard && currentBoard.collaborators.find(c => c.id === user.id)?.role !== 'observer')) && (
-                        <button 
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            removeTask(listIndex, taskIndex);
-                          }}
-                        >
-                          Usuń
-                        </button>
-                      )}
-                    </li>
+                      <div className="comment-text">{comment.text}</div>
+                    </div>
                   ))}
-                </ul>
+                </div>
                 {(!isSharedBoard || (isSharedBoard && currentBoard.collaborators.find(c => c.id === user.id)?.role !== 'observer')) && (
-                  <input
-                    className="task-input"
-                    placeholder="Nowe zadanie"
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        addTask(listIndex, e.target.value);
-                        e.target.value = '';
-                      }
-                    }}
-                  />
+                  <div className="comment-input-container">
+                    <input
+                      type="text"
+                      className="comment-input"
+                      placeholder="Dodaj komentarz..."
+                      value={commentInput}
+                      onChange={(e) => setCommentInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && commentInput.trim()) {
+                          addComment(selectedTask.listIndex, selectedTask.taskIndex, commentInput);
+                          setCommentInput('');
+                        }
+                      }}
+                    />
+                    <button
+                      className="add-comment-btn"
+                      onClick={() => {
+                        if (commentInput.trim()) {
+                          addComment(selectedTask.listIndex, selectedTask.taskIndex, commentInput);
+                          setCommentInput('');
+                        }
+                      }}
+                    >
+                      Dodaj
+                    </button>
+                  </div>
                 )}
               </div>
-            ))}
-          {(!isSharedBoard || (isSharedBoard && currentBoard.collaborators.find(c => c.id === user.id)?.role !== 'observer')) && (
-            <div className="list-table">
-              <input
-                className="list-input"
-                placeholder="Nowa lista"
-                value={newListTitle}
-                onChange={(e) => setNewListTitle(e.target.value)}
-                maxLength="20"
-              />
-              <button className="add-list-btn" onClick={addList}>
-                Dodaj listę
-              </button>
-            </div>
-          )}
-        </div>
-      )}
-
-      {selectedTask && (
-        <div className="modal-overlay" onClick={() => setSelectedTask(null)}>
-          <div className="task-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="task-modal-header">
-              <h3>{selectedTask.task.text}</h3>
-              <button className="close-btn" onClick={() => setSelectedTask(null)}>×</button>
-            </div>
-            <div className="comments-section">
-              <h4>Komentarze</h4>
-              <div className="comments-list">
-                {selectedTask.task.comments?.map((comment) => (
-                  <div key={comment.id} className="comment">
-                    <div className="comment-header">
-                      <span className="comment-author">{comment.userEmail}</span>
-                      <span className="comment-date">{formatDate(comment.createdAt)}</span>
-                      {(comment.userId === user.id || (!isSharedBoard || currentBoard.ownerId === user.id)) && (
-                        <button
-                          className="remove-comment-btn"
-                          onClick={() => removeComment(selectedTask.listIndex, selectedTask.taskIndex, comment.id)}
-                        >
-                          Usuń
-                        </button>
-                      )}
-                    </div>
-                    <div className="comment-text">{comment.text}</div>
-                  </div>
-                ))}
-              </div>
-              {(!isSharedBoard || (isSharedBoard && currentBoard.collaborators.find(c => c.id === user.id)?.role !== 'observer')) && (
-                <div className="comment-input-container">
-                  <input
-                    type="text"
-                    className="comment-input"
-                    placeholder="Dodaj komentarz..."
-                    value={commentInput}
-                    onChange={(e) => setCommentInput(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" && commentInput.trim()) {
-                        addComment(selectedTask.listIndex, selectedTask.taskIndex, commentInput);
-                        setCommentInput('');
-                      }
-                    }}
-                  />
-                  <button
-                    className="add-comment-btn"
-                    onClick={() => {
-                      if (commentInput.trim()) {
-                        addComment(selectedTask.listIndex, selectedTask.taskIndex, commentInput);
-                        setCommentInput('');
-                      }
-                    }}
-                  >
-                    Dodaj
-                  </button>
-                </div>
-              )}
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {showCollaboratorModal && (
-        <CollaboratorModal
-          board={boards[currentBoardIndex]}
-          onClose={() => setShowCollaboratorModal(false)}
-          onAddCollaborator={handleAddCollaborator}
-          onRemoveCollaborator={handleRemoveCollaborator}
-          currentUser={user}
-        />
-      )}
+        {showCollaboratorModal && (
+          <CollaboratorModal
+            board={boards[currentBoardIndex]}
+            onClose={() => setShowCollaboratorModal(false)}
+            onAddCollaborator={handleAddCollaborator}
+            onRemoveCollaborator={handleRemoveCollaborator}
+            currentUser={user}
+          />
+        )}
+      </div>
     </div>
   );
 };
