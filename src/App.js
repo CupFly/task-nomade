@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import "./App.css";
-import Auth from "./Auth";
-import CollaboratorModal from "./CollaboratorModal";
+import Auth from "./components/Auth";
+import CollaboratorModal from "./components/CollaboratorModal";
 
 const TaskBoard = ({ user }) => {
   const [boards, setBoards] = useState([]);
