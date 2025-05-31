@@ -1,69 +1,67 @@
+/**
+ * Authentication Component
+ * Handles user registration and login functionality
+ * Features:
+ * - User registration with optional username
+ * - Email format validation
+ * - Password requirements (min 6 characters)
+ * - Show/hide password toggle
+ * - Error handling and user feedback
+ * - Local storage persistence
+ */
+
 import React, { useState } from 'react';
 import './Auth.css';
 
 const Auth = ({ onLogin }) => {
+  // State management for form fields and UI
   const [isLogin, setIsLogin] = useState(true);
-  const [formData, setFormData] = useState({
-    email: '',
-    username: '',
-    password: '',
-    confirmPassword: ''
-  });
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [username, setUsername] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
-  const [showPasswords, setShowPasswords] = useState({
-    password: false,
-    confirmPassword: false
-  });
 
-  const validateEmail = (email) => {
+  /**
+   * Validates email format using regex
+   * @param {string} email - Email to validate
+   * @returns {boolean} - True if email is valid
+   */
+  const isValidEmail = (email) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
   };
 
+  /**
+   * Handles form submission for both login and registration
+   * @param {Event} e - Form submission event
+   */
   const handleSubmit = (e) => {
     e.preventDefault();
     setError('');
 
-    if (isLogin) {
-      if (!formData.email || !formData.password) {
-        setError('Proszę wypełnić wszystkie pola');
-        return;
-      }
-    } else {
-      if (!formData.email || !formData.username || !formData.password || !formData.confirmPassword) {
-        setError('Proszę wypełnić wszystkie pola');
-        return;
-      }
-    }
-
-    if (!validateEmail(formData.email)) {
-      setError('Nieprawidłowy format emaila (przykład: nazwa@domena.com)');
+    // Input validation
+    if (!email || !password) {
+      setError('Wszystkie pola są wymagane');
       return;
     }
 
-    if (formData.password.length < 6) {
+    if (!isValidEmail(email)) {
+      setError('Nieprawidłowy format adresu email');
+      return;
+    }
+
+    if (password.length < 6) {
       setError('Hasło musi mieć co najmniej 6 znaków');
       return;
     }
 
-    if (!isLogin) {
-      if (formData.password !== formData.confirmPassword) {
-        setError('Hasła nie są takie same');
-        return;
-      }
+    // Get existing users from localStorage
+    const users = JSON.parse(localStorage.getItem('users') || '[]');
 
-      if (formData.username.length < 3) {
-        setError('Nazwa użytkownika musi mieć co najmniej 3 znaki');
-        return;
-      }
-    }
-
-    // In a real application, you would make an API call here
-    // For now, we'll simulate authentication with localStorage
     if (isLogin) {
-      const users = JSON.parse(localStorage.getItem('users') || '[]');
-      const user = users.find(u => u.email === formData.email && u.password === formData.password);
-      
+      // Login logic
+      const user = users.find(u => u.email === email && u.password === password);
       if (user) {
         localStorage.setItem('currentUser', JSON.stringify(user));
         onLogin(user);
@@ -71,47 +69,35 @@ const Auth = ({ onLogin }) => {
         setError('Nieprawidłowy email lub hasło');
       }
     } else {
-      const users = JSON.parse(localStorage.getItem('users') || '[]');
-      
-      if (users.some(u => u.email === formData.email)) {
-        setError('Użytkownik z tym emailem już istnieje');
+      // Registration logic
+      if (users.some(u => u.email === email)) {
+        setError('Użytkownik z tym adresem email już istnieje');
         return;
       }
 
-      if (users.some(u => u.username === formData.username)) {
+      if (username && username.length < 3) {
+        setError('Nazwa użytkownika musi mieć co najmniej 3 znaki');
+        return;
+      }
+
+      if (username && users.some(u => u.username === username)) {
         setError('Ta nazwa użytkownika jest już zajęta');
         return;
       }
 
+      // Create new user
       const newUser = {
-        id: Date.now(),
-        email: formData.email,
-        username: formData.username,
-        password: formData.password
+        id: Date.now().toString(),
+        email,
+        password,
+        username: username || null
       };
 
-      users.push(newUser);
-      localStorage.setItem('users', JSON.stringify(users));
+      // Update localStorage and log in
+      localStorage.setItem('users', JSON.stringify([...users, newUser]));
       localStorage.setItem('currentUser', JSON.stringify(newUser));
       onLogin(newUser);
     }
-  };
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-    
-    if (error) setError('');
-  };
-
-  const togglePasswordVisibility = (field) => {
-    setShowPasswords(prev => ({
-      ...prev,
-      [field]: !prev[field]
-    }));
   };
 
   return (
@@ -120,78 +106,58 @@ const Auth = ({ onLogin }) => {
         <h2>{isLogin ? 'Logowanie' : 'Rejestracja'}</h2>
         {error && <div className="error-message">{error}</div>}
         <form onSubmit={handleSubmit}>
+          {/* Email input */}
           <div className="form-group">
-            <div className="input-container">
-              <input
-                type="email"
-                name="email"
-                placeholder="Email"
-                value={formData.email}
-                onChange={handleChange}
-              />
-            </div>
+            <input
+              type="email"
+              placeholder="Email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
           </div>
+
+          {/* Optional username field for registration */}
           {!isLogin && (
             <div className="form-group">
-              <div className="input-container">
-                <input
-                  type="text"
-                  name="username"
-                  placeholder="Nazwa użytkownika"
-                  value={formData.username}
-                  onChange={handleChange}
-                  minLength={3}
-                />
-              </div>
-            </div>
-          )}
-          <div className="form-group">
-            <div className="input-container">
               <input
-                type={showPasswords.password ? "text" : "password"}
-                name="password"
-                placeholder="Hasło"
-                value={formData.password}
-                onChange={handleChange}
-                minLength={6}
+                type="text"
+                placeholder="Nazwa użytkownika (opcjonalnie)"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
               />
-              <button
-                type="button"
-                className="show-password-button"
-                onClick={() => togglePasswordVisibility('password')}
-              >
-                {showPasswords.password ? "👁️" : "👁️‍🗨️"}
-              </button>
-            </div>
-          </div>
-          {!isLogin && (
-            <div className="form-group">
-              <div className="input-container">
-                <input
-                  type={showPasswords.confirmPassword ? "text" : "password"}
-                  name="confirmPassword"
-                  placeholder="Potwierdź hasło"
-                  value={formData.confirmPassword}
-                  onChange={handleChange}
-                  minLength={6}
-                />
-                <button
-                  type="button"
-                  className="show-password-button"
-                  onClick={() => togglePasswordVisibility('confirmPassword')}
-                >
-                  {showPasswords.confirmPassword ? "👁️" : "👁️‍🗨️"}
-                </button>
-              </div>
             </div>
           )}
-          <button type="submit" className="auth-button">
+
+          {/* Password input with show/hide toggle */}
+          <div className="form-group password-group">
+            <input
+              type={showPassword ? "text" : "password"}
+              placeholder="Hasło"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+            <button
+              type="button"
+              className="toggle-password"
+              onClick={() => setShowPassword(!showPassword)}
+            >
+              {showPassword ? '👁️' : '👁️‍🗨️'}
+            </button>
+          </div>
+
+          {/* Submit button */}
+          <button type="submit" className="submit-button">
             {isLogin ? 'Zaloguj się' : 'Zarejestruj się'}
           </button>
         </form>
+
+        {/* Toggle between login and registration */}
         <button
-          className="switch-auth-mode"
-          onClick={() => setIsLogin(!isLogin)}
+          className="toggle-auth-mode"
+          onClick={() => {
+            setIsLogin(!isLogin);
+            setError('');
+          }}
         >
           {isLogin ? 'Nie masz konta? Zarejestruj się' : 'Masz już konto? Zaloguj się'}
         </button>

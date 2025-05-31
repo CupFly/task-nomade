@@ -1,197 +1,214 @@
+/**
+ * CollaboratorModal Component Styles
+ * Provides styling for the board sharing and collaboration interface
+ */
+
+/* Modal overlay */
 .modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.7);
+  background: rgba(0, 0, 0, 0.8);
   display: flex;
   justify-content: center;
   align-items: center;
   z-index: 1000;
+  backdrop-filter: blur(4px);
 }
 
-.modal-content {
-  background: #2A2A2A;
+/* Modal container */
+.collaborator-modal {
+  background: #1E1E1E;
   padding: 24px;
-  border-radius: 8px;
+  border-radius: 12px;
   width: 90%;
   max-width: 500px;
+  max-height: 80vh;
+  overflow-y: auto;
+  position: relative;
   color: #D1D1D1;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  border: 1px solid #333;
 }
 
-.modal-content h2 {
-  margin: 0 0 20px 0;
-  color: #fff;
-}
-
-.input-group {
+/* Modal header */
+.modal-header {
   display: flex;
-  gap: 8px;
-  margin-bottom: 16px;
-}
-
-input[type="email"] {
-  flex: 1;
-  padding: 8px 12px;
-  border: 1px solid #444;
-  border-radius: 4px;
-  background: #333;
-  color: #fff;
-  font-size: 14px;
-}
-
-.role-select {
-  padding: 8px 12px;
-  border: 1px solid #444;
-  border-radius: 4px;
-  background: #333;
-  color: #fff;
-  font-size: 14px;
-  cursor: pointer;
-}
-
-button {
-  padding: 8px 16px;
-  background: #5A00FF;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 14px;
-  transition: background-color 0.2s;
-}
-
-button:hover {
-  background: #4500CC;
-}
-
-.error-message {
-  color: #ff4d4d;
-  margin: 8px 0;
-  font-size: 14px;
-}
-
-.collaborators-list {
-  margin-top: 24px;
-}
-
-.collaborators-list h3 {
-  margin: 0 0 12px 0;
-  color: #fff;
-}
-
-.collaborators-list ul {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.collaborators-list li {
-  display: flex;
+  justify-content: space-between;
   align-items: center;
-  padding: 8px;
-  background: #333;
-  border-radius: 4px;
-  margin-bottom: 8px;
-  gap: 8px;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #333;
 }
 
-.role-badge {
-  background: #5A00FF;
+.modal-header h2 {
+  margin: 0;
   color: white;
-  padding: 2px 8px;
-  border-radius: 12px;
-  font-size: 12px;
-  margin-left: auto;
+  font-size: 20px;
+  font-weight: 600;
 }
 
-.remove-collaborator-btn {
-  background: #ff4d4d;
-  padding: 4px 8px;
-  font-size: 12px;
-}
-
-.remove-collaborator-btn:hover {
-  background: #ff3333;
-}
-
+/* Close button */
 .close-btn {
-  margin-top: 20px;
-  width: 100%;
-  background: #444;
+  background: transparent;
+  border: none;
+  color: #888;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 4px;
+  line-height: 1;
+  transition: color 0.2s;
 }
 
 .close-btn:hover {
-  background: #555;
-}
-
-.close-button {
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
-  background: none;
-  border: none;
-  color: #D1D1D1;
-  font-size: 1.5rem;
-  cursor: pointer;
-  padding: 0.5rem;
-}
-
-.close-button:hover {
   color: white;
 }
 
-.add-collaborator {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 1rem;
+/* Collaborator form */
+.collaborator-form {
+  margin-bottom: 24px;
 }
 
-.add-collaborator input {
-  flex: 1;
-  padding: 0.8rem;
-  background: #222;
+.form-group {
+  margin-bottom: 16px;
+}
+
+/* Form inputs */
+.form-group input,
+.form-group select {
+  width: 100%;
+  padding: 12px;
+  background: #2A2A2A;
   border: 1px solid #444;
-  border-radius: 4px;
+  border-radius: 6px;
   color: white;
-  font-size: 1rem;
-}
-
-.add-collaborator input:focus {
+  font-size: 14px;
   outline: none;
-  border-color: #5A00FF;
+  transition: all 0.2s ease;
 }
 
-.add-collaborator button {
-  padding: 0.8rem 1.5rem;
+.form-group input:focus,
+.form-group select:focus {
+  border-color: #5A00FF;
+  box-shadow: 0 0 0 2px rgba(90, 0, 255, 0.2);
+}
+
+/* Error message */
+.error-message {
+  background: #FF3333;
+  color: white;
+  padding: 12px;
+  border-radius: 6px;
+  margin-bottom: 16px;
+  font-size: 14px;
+  text-align: center;
+}
+
+/* Add collaborator button */
+.add-collaborator-btn {
+  width: 100%;
+  padding: 12px;
   background: #5A00FF;
   color: white;
   border: none;
-  border-radius: 4px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
   cursor: pointer;
-  font-size: 1rem;
+  transition: all 0.2s ease;
 }
 
-.add-collaborator button:hover {
+.add-collaborator-btn:hover {
   background: #4500CC;
+  transform: translateY(-1px);
+}
+
+/* Collaborators list */
+.collaborators-list {
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid #333;
+}
+
+.collaborators-list h3 {
+  margin: 0 0 16px 0;
+  color: white;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+/* Collaborator items */
+.collaborator-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  background: #2A2A2A;
+  border-radius: 6px;
+  margin-bottom: 8px;
+  border: 1px solid #333;
 }
 
 .collaborator-info {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  width: 100%;
+  flex-direction: column;
+  gap: 4px;
 }
 
-.collaborator-info span {
-  word-break: break-all;
-  margin-right: 8px;
+.collaborator-email {
+  color: #D1D1D1;
+  font-size: 14px;
 }
 
-.collaborator-actions {
-  display: flex;
-  gap: 8px;
-  align-items: center;
+.collaborator-role {
+  color: #888;
+  font-size: 12px;
+}
+
+/* Remove collaborator button */
+.remove-collaborator-btn {
+  background: #FF3333;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 12px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.remove-collaborator-btn:hover {
+  background: #CC0000;
+  transform: translateY(-1px);
+}
+
+/* Empty state */
+.no-collaborators {
+  color: #888;
+  text-align: center;
+  padding: 16px;
+  font-size: 14px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 480px) {
+  .collaborator-modal {
+    padding: 16px;
+  }
+
+  .modal-header h2 {
+    font-size: 18px;
+  }
+
+  .collaborator-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .remove-collaborator-btn {
+    width: 100%;
+  }
 } 

@@ -200,50 +200,20 @@ const TaskBoard = ({ user, onLogout }) => {
     }
   };
 
-  const addTask = (listIndex, task) => {
-    if (!task.trim()) return;
-    
-    const currentBoard = isSharedBoard ? sharedBoards[currentBoardIndex - boards.length] : boards[currentBoardIndex];
-
-    // Check if user is an observer
-    if (isSharedBoard) {
-      const userRole = currentBoard.collaborators.find(c => c.id === user.id)?.role;
-      if (userRole === 'observer') {
-        return; // Observers cannot add tasks
-      }
-    }
-    
-    const updatedBoard = {
-      ...currentBoard,
-      lists: currentBoard.lists.map((list, idx) =>
-        idx === listIndex
-          ? { 
-              ...list, 
-              tasks: [...list.tasks, { 
-                text: task,
-                completed: false,
-                createdAt: Date.now(),
-                comments: [],
-                id: Date.now().toString(), // Unique ID for the task
-                color: '#ff0000' // Default color is now red
-              }] 
-            }
-          : list
-      )
-    };
-    syncBoardChanges(updatedBoard, isSharedBoard);
-  };
-
-  // Add new function to update task color
+  /**
+   * Task Color Management
+   * - Each task can have a custom background color
+   * - Default color is red (#ff0000)
+   * - Color is persisted and synced across all users
+   * - Only non-observer users can change colors
+   */
   const updateTaskColor = (listIndex, taskIndex, color) => {
     const currentBoard = isSharedBoard ? sharedBoards[currentBoardIndex - boards.length] : boards[currentBoardIndex];
 
-    // Check if user is an observer
+    // Prevent observers from changing task colors in shared boards
     if (isSharedBoard) {
       const userRole = currentBoard.collaborators.find(c => c.id === user.id)?.role;
-      if (userRole === 'observer') {
-        return; // Observers cannot change task colors
-      }
+      if (userRole === 'observer') return;
     }
 
     const updatedBoard = {
@@ -263,13 +233,101 @@ const TaskBoard = ({ user, onLogout }) => {
     };
     syncBoardChanges(updatedBoard, isSharedBoard);
 
-    // Update the selected task if it's open in the modal
+    // Update modal view if the task is currently selected
     if (selectedTask && selectedTask.listIndex === listIndex && selectedTask.taskIndex === taskIndex) {
       setSelectedTask(prev => ({
         ...prev,
         task: { ...prev.task, color: color }
       }));
     }
+  };
+
+  /**
+   * Task Title Management
+   * - Titles can be edited inline on the task card or in the modal
+   * - Edit mode is triggered by clicking the edit button (✎)
+   * - Changes can be saved with Enter or by clicking outside
+   * - Escape cancels the edit
+   * - Empty titles are not allowed
+   * - Only non-observer users can edit titles
+   */
+  const updateTaskTitle = (listIndex, taskIndex, newTitle) => {
+    if (!newTitle.trim()) return;
+    
+    const currentBoard = isSharedBoard ? sharedBoards[currentBoardIndex - boards.length] : boards[currentBoardIndex];
+
+    // Prevent observers from editing titles in shared boards
+    if (isSharedBoard) {
+      const userRole = currentBoard.collaborators.find(c => c.id === user.id)?.role;
+      if (userRole === 'observer') return;
+    }
+
+    const updatedBoard = {
+      ...currentBoard,
+      lists: currentBoard.lists.map((list, idx) =>
+        idx === listIndex
+          ? {
+              ...list,
+              tasks: list.tasks.map((task, tIdx) =>
+                tIdx === taskIndex
+                  ? { ...task, text: newTitle }
+                  : task
+              )
+            }
+          : list
+      )
+    };
+    syncBoardChanges(updatedBoard, isSharedBoard);
+
+    // Update modal view if the task is currently selected
+    if (selectedTask && selectedTask.listIndex === listIndex && selectedTask.taskIndex === taskIndex) {
+      setSelectedTask(prev => ({
+        ...prev,
+        task: { ...prev.task, text: newTitle }
+      }));
+    }
+  };
+
+  /**
+   * Task Creation
+   * - New tasks are created with a default red background (#ff0000)
+   * - Each task has a unique ID based on timestamp
+   * - Tasks include support for:
+   *   - Custom colors
+   *   - Editable titles
+   *   - Comments
+   *   - Completion status
+   */
+  const addTask = (listIndex, task) => {
+    if (!task.trim()) return;
+    
+    const currentBoard = isSharedBoard ? sharedBoards[currentBoardIndex - boards.length] : boards[currentBoardIndex];
+
+    // Prevent observers from adding tasks in shared boards
+    if (isSharedBoard) {
+      const userRole = currentBoard.collaborators.find(c => c.id === user.id)?.role;
+      if (userRole === 'observer') return;
+    }
+    
+    const updatedBoard = {
+      ...currentBoard,
+      lists: currentBoard.lists.map((list, idx) =>
+        idx === listIndex
+          ? { 
+              ...list, 
+              tasks: [...list.tasks, { 
+                text: task,
+                completed: false,
+                createdAt: Date.now(),
+                comments: [],
+                id: Date.now().toString(),
+                color: '#ff0000' // Default red background for new tasks
+              }] 
+            }
+          : list
+      )
+    };
+    syncBoardChanges(updatedBoard, isSharedBoard);
   };
 
   const addComment = (listIndex, taskIndex, comment) => {
@@ -848,46 +906,6 @@ const TaskBoard = ({ user, onLogout }) => {
     syncBoardChanges(updatedBoard, isSharedBoard);
   };
 
-  // Add updateTaskTitle function
-  const updateTaskTitle = (listIndex, taskIndex, newTitle) => {
-    if (!newTitle.trim()) return;
-    
-    const currentBoard = isSharedBoard ? sharedBoards[currentBoardIndex - boards.length] : boards[currentBoardIndex];
-
-    // Check if user is an observer
-    if (isSharedBoard) {
-      const userRole = currentBoard.collaborators.find(c => c.id === user.id)?.role;
-      if (userRole === 'observer') {
-        return; // Observers cannot edit task titles
-      }
-    }
-
-    const updatedBoard = {
-      ...currentBoard,
-      lists: currentBoard.lists.map((list, idx) =>
-        idx === listIndex
-          ? {
-              ...list,
-              tasks: list.tasks.map((task, tIdx) =>
-                tIdx === taskIndex
-                  ? { ...task, text: newTitle }
-                  : task
-              )
-            }
-          : list
-      )
-    };
-    syncBoardChanges(updatedBoard, isSharedBoard);
-
-    // Update the selected task if it's open in the modal
-    if (selectedTask && selectedTask.listIndex === listIndex && selectedTask.taskIndex === taskIndex) {
-      setSelectedTask(prev => ({
-        ...prev,
-        task: { ...prev.task, text: newTitle }
-      }));
-    }
-  };
-
   return (
     <div className="app-container" key={forceUpdate}>
       <div className="sidebar">
@@ -1201,8 +1219,10 @@ const TaskBoard = ({ user, onLogout }) => {
                         }}
                         style={{ backgroundColor: task.color || '#ffffff' }}
                       >
+                        {/* Task Title Section */}
                         <div className="task-title">
                           {editingTaskId === task.id ? (
+                            // Title Edit Mode
                             <input
                               type="text"
                               className="task-title-edit"
@@ -1228,6 +1248,7 @@ const TaskBoard = ({ user, onLogout }) => {
                               autoFocus
                             />
                           ) : (
+                            // Title Display Mode
                             <>
                               <span>{task.text}</span>
                               {(!isSharedBoard || (isSharedBoard && currentBoard.collaborators.find(c => c.id === user.id)?.role !== 'observer')) && (
@@ -1245,6 +1266,8 @@ const TaskBoard = ({ user, onLogout }) => {
                             </>
                           )}
                         </div>
+
+                        {/* Task Controls Section */}
                         <div className="task-content">
                           <div className="task-left">
                             <input
@@ -1309,6 +1332,7 @@ const TaskBoard = ({ user, onLogout }) => {
         {selectedTask && (
           <div className="modal-overlay" onClick={() => setSelectedTask(null)}>
             <div className="task-modal" onClick={(e) => e.stopPropagation()}>
+              {/* Modal Header with Editable Title */}
               <div className="task-modal-header">
                 {editingTaskId === selectedTask.task.id ? (
                   <input
@@ -1350,6 +1374,20 @@ const TaskBoard = ({ user, onLogout }) => {
                 )}
                 <button className="close-btn" onClick={() => setSelectedTask(null)}>×</button>
               </div>
+
+              {/* Color Picker Section */}
+              {(!isSharedBoard || (isSharedBoard && currentBoard.collaborators.find(c => c.id === user.id)?.role !== 'observer')) && (
+                <div className="task-color-picker">
+                  <label>Kolor zadania:</label>
+                  <input
+                    type="color"
+                    value={selectedTask.task.color || '#ffffff'}
+                    onChange={(e) => updateTaskColor(selectedTask.listIndex, selectedTask.taskIndex, e.target.value)}
+                  />
+                </div>
+              )}
+
+              {/* Comments Section */}
               <div className="comments-section">
                 <h4>Komentarze</h4>
                 <div className="comments-list">

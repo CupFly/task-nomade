@@ -1,92 +1,129 @@
+/**
+ * CollaboratorModal Component
+ * Handles the sharing and collaboration features for boards
+ * Features:
+ * - Add collaborators by email
+ * - Set collaborator roles (editor/observer)
+ * - Remove collaborators
+ * - Validation and error handling
+ * - Real-time updates across users
+ */
+
 import React, { useState } from 'react';
 import './CollaboratorModal.css';
 
 const CollaboratorModal = ({ board, onClose, onAddCollaborator, onRemoveCollaborator, currentUser }) => {
+  // State management for form and UI
   const [email, setEmail] = useState('');
-  const [role, setRole] = useState('editor'); // Default role is editor
+  const [role, setRole] = useState('editor');
   const [error, setError] = useState('');
 
+  /**
+   * Validates email format using regex
+   * @param {string} email - Email to validate
+   * @returns {boolean} - True if email is valid
+   */
+  const isValidEmail = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  /**
+   * Handles the addition of a new collaborator
+   * @param {Event} e - Form submission event
+   */
   const handleSubmit = (e) => {
     e.preventDefault();
     setError('');
 
+    // Input validation
     if (!email.trim()) {
-      setError('Wprowadź adres email');
+      setError('Proszę podać adres email');
       return;
     }
 
-    // Less strict email validation
-    if (!email.includes('@')) {
-      setError('Wprowadź prawidłowy adres email');
+    if (!isValidEmail(email)) {
+      setError('Nieprawidłowy format adresu email');
       return;
     }
 
-    // Check if user is trying to share with themselves
-    if (email === currentUser.email) {
-      setError('Nie możesz udostępnić tablicy samemu sobie');
-      return;
-    }
-
-    // Check if user is already a collaborator
-    if (board.collaborators?.some(c => c.email === email)) {
-      setError('Ten użytkownik już ma dostęp do tablicy');
-      return;
-    }
-
-    // Get user ID from localStorage (simulating a user database)
+    // Check if user exists
     const users = JSON.parse(localStorage.getItem('users') || '[]');
-    const targetUser = users.find(u => u.email === email);
+    const user = users.find(u => u.email === email);
 
-    if (!targetUser) {
-      setError('Nie znaleziono użytkownika. Użytkownik musi się najpierw zarejestrować.');
+    if (!user) {
+      setError('Nie znaleziono użytkownika o podanym adresie email');
       return;
     }
 
+    // Prevent self-collaboration
+    if (user.id === currentUser.id) {
+      setError('Nie możesz dodać siebie jako współpracownika');
+      return;
+    }
+
+    // Check if already a collaborator
+    if (board.collaborators?.some(c => c.id === user.id)) {
+      setError('Ten użytkownik jest już współpracownikiem');
+      return;
+    }
+
+    // Add collaborator
     onAddCollaborator({
-      id: targetUser.id,
-      email: targetUser.email,
-      role: role // Include the selected role
+      id: user.id,
+      email: user.email,
+      role: role
     });
 
+    // Reset form
     setEmail('');
     setRole('editor');
   };
 
   return (
-    <div className="modal-overlay">
-      <div className="modal-content">
-        <h2>Udostępnij tablicę</h2>
-        <form onSubmit={handleSubmit}>
-          <div className="input-group">
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="collaborator-modal" onClick={e => e.stopPropagation()}>
+        {/* Modal Header */}
+        <div className="modal-header">
+          <h2>Zarządzaj współpracownikami</h2>
+          <button className="close-btn" onClick={onClose}>×</button>
+        </div>
+
+        {/* Add Collaborator Form */}
+        <form onSubmit={handleSubmit} className="collaborator-form">
+          {error && <div className="error-message">{error}</div>}
+          <div className="form-group">
             <input
               type="email"
-              placeholder="Email użytkownika"
+              placeholder="Email współpracownika"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
-            <select 
-              value={role}
-              onChange={(e) => setRole(e.target.value)}
-              className="role-select"
-            >
+          </div>
+          <div className="form-group">
+            <select value={role} onChange={(e) => setRole(e.target.value)}>
               <option value="editor">Edytor</option>
               <option value="observer">Obserwator</option>
             </select>
           </div>
-          {error && <p className="error-message">{error}</p>}
-          <button type="submit">Dodaj</button>
+          <button type="submit" className="add-collaborator-btn">
+            Dodaj współpracownika
+          </button>
         </form>
 
+        {/* Collaborators List */}
         <div className="collaborators-list">
-          <h3>Współpracownicy:</h3>
+          <h3>Obecni współpracownicy</h3>
           {board.collaborators?.length > 0 ? (
             <ul>
-              {board.collaborators.map((collaborator, index) => (
-                <li key={index}>
-                  {collaborator.email}
-                  <span className="role-badge">
-                    {collaborator.role === 'observer' ? 'Obserwator' : 'Edytor'}
-                  </span>
+              {board.collaborators.map((collaborator) => (
+                <li key={collaborator.id} className="collaborator-item">
+                  <div className="collaborator-info">
+                    <span className="collaborator-email">{collaborator.email}</span>
+                    <span className="collaborator-role">
+                      {collaborator.role === 'editor' ? 'Edytor' : 'Obserwator'}
+                    </span>
+                  </div>
                   <button
                     onClick={() => onRemoveCollaborator(collaborator.id, board.title)}
                     className="remove-collaborator-btn"
@@ -97,11 +134,9 @@ const CollaboratorModal = ({ board, onClose, onAddCollaborator, onRemoveCollabor
               ))}
             </ul>
           ) : (
-            <p>Brak współpracowników</p>
+            <p className="no-collaborators">Brak współpracowników</p>
           )}
         </div>
-
-        <button onClick={onClose} className="close-btn">Zamknij</button>
       </div>
     </div>
   );
