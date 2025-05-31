@@ -27,6 +27,7 @@ body {
   overflow-x: hidden;
   flex-shrink: 0;
   border-right: 1px solid #333;
+  position: relative;
 }
 
 .main-content {
@@ -100,30 +101,94 @@ body {
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: column;
   gap: 12px;
   transition: all 0.2s ease;
   cursor: pointer;
   user-select: none;
   position: relative;
   z-index: 1;
-  border: 1px solid #333;
+  border: 1px solid #ddd !important;
+  transition: background-color 0.2s ease;
 }
 
 .task:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-  border-color: #444;
+  filter: brightness(0.95);
 }
 
 .task.completed {
   background: #1E1E1E;
-  opacity: 0.8;
+  opacity: 0.7;
   border-color: #333;
 }
 
+.task-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #FFFFFF;
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  width: 100%;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.task-title-edit {
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+  color: #FFFFFF;
+  font-size: 16px;
+  font-weight: 600;
+  padding: 4px 8px;
+  width: 100%;
+  outline: none;
+}
+
+.task-title-edit:focus {
+  background: rgba(0, 0, 0, 0.3);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+.edit-title-btn {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  padding: 4px;
+  font-size: 14px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.task-title:hover .edit-title-btn {
+  opacity: 1;
+}
+
+.edit-title-btn:hover {
+  color: #FFFFFF;
+}
+
+.task.completed .task-title {
+  text-decoration: line-through;
+  opacity: 0.7;
+}
+
 .task-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+  justify-content: space-between;
+}
+
+.task-left {
   display: flex;
   align-items: center;
   gap: 12px;
@@ -151,6 +216,8 @@ body {
   flex: 1;
   min-width: 0;
   font-size: 14px;
+  color: #000;
+  mix-blend-mode: difference;
 }
 
 .task.completed .task-text {
@@ -169,11 +236,14 @@ body {
   width: fit-content;
   font-size: 13px;
   transition: all 0.2s ease;
+  margin: 0 8px;
+  outline: 2px solid black;
 }
 
 .task button:hover {
   background: #CC0000;
   transform: translateY(-1px);
+  outline: 3px solid black;
 }
 
 .task-input, .list-input {
@@ -246,28 +316,48 @@ body {
 
 .header h1 {
   color: #D1D1D1;
-  font-size: 1.5rem;
+  font-size: 1.2rem;
   margin: 0;
   font-weight: 600;
 }
 
+.sidebar-logout-button {
+  background: #FF3333;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 16px;
+  height: 32px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.sidebar-logout-button:hover {
+  background: #CC0000;
+  transform: translateY(-1px);
+}
+
 .logout-button {
-  width: 100%;
+  width: 280px;
+  height: 36px;
   background: #FF3333;
   color: white;
   border: none;
   border-radius: 8px;
-  padding: 14px;
+  padding: 0 16px;
   cursor: pointer;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 500;
-  margin-top: auto;
   transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: auto;
 }
 
 .logout-button:hover {
   background: #CC0000;
-  transform: translateY(-1px);
 }
 
 .boards-navigation {
@@ -275,6 +365,9 @@ body {
   padding: 0;
   margin-bottom: 0;
   box-shadow: none;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
 }
 
 .board-tabs {
@@ -282,9 +375,12 @@ body {
   flex-direction: column;
   gap: 12px;
   align-items: stretch;
+  margin-bottom: 16px;
+  width: 280px;
 }
 
 .board-tab {
+  width: 280px;
   background: #2A2A2A;
   color: #D1D1D1;
   padding: 14px;
@@ -296,7 +392,6 @@ body {
   gap: 12px;
   transition: all 0.2s ease;
   min-width: 0;
-  width: 100%;
   user-select: none;
   position: relative;
   border: 1px solid #333;
@@ -368,11 +463,11 @@ body {
 }
 
 .new-board-form {
+  width: 280px;
   display: flex;
   gap: 10px;
   align-items: center;
   margin-top: 12px;
-  width: 100%;
 }
 
 .new-board-form input {
@@ -743,4 +838,44 @@ body {
 
 .board::-webkit-scrollbar-thumb:hover {
   background: #555;
+}
+
+.header.clickable {
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.header.clickable:hover {
+  background: #2A2A2A;
+}
+
+.task-color-picker {
+  padding: 10px 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-bottom: 1px solid #eee;
+}
+
+.task-color-picker label {
+  font-size: 14px;
+  color: #666;
+}
+
+.task-color-picker input[type="color"] {
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.task-color-picker input[type="color"]::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.task-color-picker input[type="color"]::-webkit-color-swatch {
+  border: none;
+  border-radius: 4px;
 }

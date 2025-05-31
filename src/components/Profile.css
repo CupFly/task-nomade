@@ -1,0 +1,317 @@
+.profile-page {
+  min-height: 100vh;
+  background: #181818;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 2rem;
+}
+
+.profile-container {
+  background: #2A2A2A;
+  border-radius: 12px;
+  padding: 2rem;
+  width: 100%;
+  max-width: 800px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.profile-header {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+  padding-bottom: 2rem;
+  border-bottom: 1px solid #444;
+}
+
+.profile-header-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.profile-header-info h1 {
+  color: #D1D1D1;
+  margin: 0;
+  font-size: 1.8rem;
+}
+
+.profile-email {
+  color: #888;
+  font-size: 1rem;
+}
+
+.profile-avatar {
+  width: 80px;
+  height: 80px;
+  background: #5A00FF;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  color: white;
+  font-weight: bold;
+}
+
+.profile-section {
+  margin-bottom: 2rem;
+  padding-bottom: 2rem;
+  border-bottom: 1px solid #444;
+}
+
+.profile-section:last-child {
+  border-bottom: none;
+}
+
+.profile-section h2 {
+  color: #D1D1D1;
+  margin: 0 0 1.5rem 0;
+  font-size: 1.4rem;
+}
+
+.profile-info, .profile-stats {
+  display: grid;
+  gap: 1rem;
+}
+
+.info-item, .stat-item {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  padding: 1rem;
+  background: #222;
+  border-radius: 8px;
+}
+
+.info-item label, .stat-item label {
+  color: #888;
+  min-width: 150px;
+}
+
+.info-item span, .stat-item span {
+  color: #D1D1D1;
+}
+
+.profile-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.return-button, .logout-button {
+  height: 36px;
+  padding: 0 16px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 120px;
+  width: fit-content;
+}
+
+.return-button {
+  background: #5A00FF;
+  color: white;
+}
+
+.return-button:hover {
+  background: #4500CC;
+  transform: translateY(-2px);
+}
+
+.logout-button {
+  background: #FF3333;
+  color: white;
+}
+
+.logout-button:hover {
+  background: #CC0000;
+  transform: translateY(-2px);
+}
+
+.edit-button {
+  background: #5A00FF;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-left: auto;
+}
+
+.edit-button:hover {
+  background: #4500CC;
+  transform: translateY(-1px);
+}
+
+.edit-form {
+  background: #222;
+  padding: 16px;
+  border-radius: 8px;
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.edit-form input {
+  background: #2A2A2A;
+  border: 1px solid #444;
+  border-radius: 6px;
+  padding: 8px 12px;
+  color: white;
+  font-size: 14px;
+  width: 100%;
+}
+
+.edit-form input:focus {
+  outline: none;
+  border-color: #5A00FF;
+  box-shadow: 0 0 0 2px rgba(90, 0, 255, 0.2);
+}
+
+.form-buttons {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 4px;
+}
+
+.save-button, .cancel-button {
+  border: none;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.save-button {
+  background: #5A00FF;
+  color: white;
+}
+
+.save-button:hover {
+  background: #4500CC;
+  transform: translateY(-1px);
+}
+
+.cancel-button {
+  background: #444;
+  color: white;
+}
+
+.cancel-button:hover {
+  background: #555;
+  transform: translateY(-1px);
+}
+
+.error-message {
+  color: #FF3333;
+  font-size: 13px;
+  margin-top: -4px;
+}
+
+.password-input-container {
+  position: relative;
+  width: 300px;
+  margin-bottom: 10px;
+}
+
+.password-input-container input {
+  width: 100%;
+  padding-right: 35px;
+  box-sizing: border-box;
+}
+
+.show-password-button {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0 8px;
+  height: 100%;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #666;
+  border-top-right-radius: 6px;
+  border-bottom-right-radius: 6px;
+}
+
+.show-password-button:hover {
+  color: #333;
+}
+
+.danger-zone h2 {
+  color: #FF3333 !important;
+}
+
+.info-item.danger {
+  border: 1px solid #FF3333;
+  background: rgba(255, 51, 51, 0.1);
+}
+
+.delete-button {
+  background: #FF3333;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-left: auto;
+}
+
+.delete-button:hover {
+  background: #CC0000;
+  transform: translateY(-1px);
+}
+
+.delete-form {
+  border: 1px solid #FF3333;
+  background: rgba(255, 51, 51, 0.05);
+}
+
+.delete-form input[type="password"] {
+  width: 300px;
+  margin: 0 auto;
+  display: block;
+}
+
+.delete-warning {
+  color: #FF3333;
+  margin: 0 0 16px 0;
+  text-align: center;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.confirm-delete-button {
+  background: #FF3333;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.confirm-delete-button:hover {
+  background: #CC0000;
+  transform: translateY(-1px);
+} 

@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from "react";
+import { BrowserRouter as Router, Routes, Route, useNavigate } from "react-router-dom";
 import "./App.css";
 import Auth from "./components/Auth";
+import Profile from "./components/Profile";
 import CollaboratorModal from "./components/CollaboratorModal";
 
-const TaskBoard = ({ user }) => {
+const TaskBoard = ({ user, onLogout }) => {
+  const navigate = useNavigate();
   const [boards, setBoards] = useState([]);
   const [sharedBoards, setSharedBoards] = useState([]);
   const [currentBoardIndex, setCurrentBoardIndex] = useState(0);
@@ -12,6 +15,8 @@ const TaskBoard = ({ user }) => {
   const [showCollaboratorModal, setShowCollaboratorModal] = useState(false);
   const [lastUpdate, setLastUpdate] = useState(Date.now());
   const [forceUpdate, setForceUpdate] = useState(0);
+  const [editingTaskId, setEditingTaskId] = useState(null);
+  const [editingTitle, setEditingTitle] = useState("");
 
   // Function to clean up all drag states
   const cleanupDragStates = () => {
@@ -124,7 +129,7 @@ const TaskBoard = ({ user }) => {
     }
     // Remove only the current user session
     localStorage.removeItem('currentUser');
-    window.location.reload();
+    onLogout();
   };
 
   const allBoards = [...boards, ...sharedBoards];
@@ -219,13 +224,52 @@ const TaskBoard = ({ user }) => {
                 completed: false,
                 createdAt: Date.now(),
                 comments: [],
-                id: Date.now().toString() // Unique ID for the task
+                id: Date.now().toString(), // Unique ID for the task
+                color: '#ff0000' // Default color is now red
               }] 
             }
           : list
       )
     };
     syncBoardChanges(updatedBoard, isSharedBoard);
+  };
+
+  // Add new function to update task color
+  const updateTaskColor = (listIndex, taskIndex, color) => {
+    const currentBoard = isSharedBoard ? sharedBoards[currentBoardIndex - boards.length] : boards[currentBoardIndex];
+
+    // Check if user is an observer
+    if (isSharedBoard) {
+      const userRole = currentBoard.collaborators.find(c => c.id === user.id)?.role;
+      if (userRole === 'observer') {
+        return; // Observers cannot change task colors
+      }
+    }
+
+    const updatedBoard = {
+      ...currentBoard,
+      lists: currentBoard.lists.map((list, idx) =>
+        idx === listIndex
+          ? {
+              ...list,
+              tasks: list.tasks.map((task, tIdx) =>
+                tIdx === taskIndex
+                  ? { ...task, color: color }
+                  : task
+              )
+            }
+          : list
+      )
+    };
+    syncBoardChanges(updatedBoard, isSharedBoard);
+
+    // Update the selected task if it's open in the modal
+    if (selectedTask && selectedTask.listIndex === listIndex && selectedTask.taskIndex === taskIndex) {
+      setSelectedTask(prev => ({
+        ...prev,
+        task: { ...prev.task, color: color }
+      }));
+    }
   };
 
   const addComment = (listIndex, taskIndex, comment) => {
@@ -804,11 +848,54 @@ const TaskBoard = ({ user }) => {
     syncBoardChanges(updatedBoard, isSharedBoard);
   };
 
+  // Add updateTaskTitle function
+  const updateTaskTitle = (listIndex, taskIndex, newTitle) => {
+    if (!newTitle.trim()) return;
+    
+    const currentBoard = isSharedBoard ? sharedBoards[currentBoardIndex - boards.length] : boards[currentBoardIndex];
+
+    // Check if user is an observer
+    if (isSharedBoard) {
+      const userRole = currentBoard.collaborators.find(c => c.id === user.id)?.role;
+      if (userRole === 'observer') {
+        return; // Observers cannot edit task titles
+      }
+    }
+
+    const updatedBoard = {
+      ...currentBoard,
+      lists: currentBoard.lists.map((list, idx) =>
+        idx === listIndex
+          ? {
+              ...list,
+              tasks: list.tasks.map((task, tIdx) =>
+                tIdx === taskIndex
+                  ? { ...task, text: newTitle }
+                  : task
+              )
+            }
+          : list
+      )
+    };
+    syncBoardChanges(updatedBoard, isSharedBoard);
+
+    // Update the selected task if it's open in the modal
+    if (selectedTask && selectedTask.listIndex === listIndex && selectedTask.taskIndex === taskIndex) {
+      setSelectedTask(prev => ({
+        ...prev,
+        task: { ...prev.task, text: newTitle }
+      }));
+    }
+  };
+
   return (
     <div className="app-container" key={forceUpdate}>
       <div className="sidebar">
-        <div className="header">
-          <h1>Witaj, {user.email}</h1>
+        <div 
+          className="header clickable"
+          onClick={() => navigate('/profile')}
+        >
+          <h1>Witaj, {user.username || user.email}</h1>
         </div>
         <div className="boards-navigation">
           <div className="board-tabs">
@@ -1112,33 +1199,79 @@ const TaskBoard = ({ user }) => {
                         onDragEnd={(e) => {
                           cleanupDragStates();
                         }}
+                        style={{ backgroundColor: task.color || '#ffffff' }}
                       >
-                        <div className="task-content">
-                          <input
-                            type="checkbox"
-                            checked={task.completed}
-                            onChange={() => toggleTaskCompletion(listIndex, taskIndex)}
-                            disabled={isSharedBoard && currentBoard.collaborators.find(c => c.id === user.id)?.role === 'observer'}
-                            className="task-checkbox"
-                            onClick={(e) => e.stopPropagation()}
-                          />
-                          <span className="task-text">{task.text}</span>
-                          {task.comments?.length > 0 && (
-                            <span className="comment-count">
-                              {task.comments.length} 💬
-                            </span>
+                        <div className="task-title">
+                          {editingTaskId === task.id ? (
+                            <input
+                              type="text"
+                              className="task-title-edit"
+                              value={editingTitle}
+                              onChange={(e) => setEditingTitle(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  updateTaskTitle(listIndex, taskIndex, editingTitle);
+                                  setEditingTaskId(null);
+                                  e.stopPropagation();
+                                } else if (e.key === 'Escape') {
+                                  setEditingTaskId(null);
+                                  e.stopPropagation();
+                                }
+                              }}
+                              onBlur={() => {
+                                if (editingTitle.trim()) {
+                                  updateTaskTitle(listIndex, taskIndex, editingTitle);
+                                }
+                                setEditingTaskId(null);
+                              }}
+                              onClick={(e) => e.stopPropagation()}
+                              autoFocus
+                            />
+                          ) : (
+                            <>
+                              <span>{task.text}</span>
+                              {(!isSharedBoard || (isSharedBoard && currentBoard.collaborators.find(c => c.id === user.id)?.role !== 'observer')) && (
+                                <button
+                                  className="edit-title-btn"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setEditingTaskId(task.id);
+                                    setEditingTitle(task.text);
+                                  }}
+                                >
+                                  ✎
+                                </button>
+                              )}
+                            </>
                           )}
                         </div>
-                        {(!isSharedBoard || (isSharedBoard && currentBoard.collaborators.find(c => c.id === user.id)?.role !== 'observer')) && (
-                          <button 
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              removeTask(listIndex, taskIndex);
-                            }}
-                          >
-                            Usuń
-                          </button>
-                        )}
+                        <div className="task-content">
+                          <div className="task-left">
+                            <input
+                              type="checkbox"
+                              checked={task.completed}
+                              onChange={() => toggleTaskCompletion(listIndex, taskIndex)}
+                              disabled={isSharedBoard && currentBoard.collaborators.find(c => c.id === user.id)?.role === 'observer'}
+                              className="task-checkbox"
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                            {task.comments?.length > 0 && (
+                              <span className="comment-count">
+                                {task.comments.length} 💬
+                              </span>
+                            )}
+                          </div>
+                          {(!isSharedBoard || (isSharedBoard && currentBoard.collaborators.find(c => c.id === user.id)?.role !== 'observer')) && (
+                            <button 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                removeTask(listIndex, taskIndex);
+                              }}
+                            >
+                              Usuń
+                            </button>
+                          )}
+                        </div>
                       </li>
                     ))}
                   </ul>
@@ -1177,7 +1310,44 @@ const TaskBoard = ({ user }) => {
           <div className="modal-overlay" onClick={() => setSelectedTask(null)}>
             <div className="task-modal" onClick={(e) => e.stopPropagation()}>
               <div className="task-modal-header">
-                <h3>{selectedTask.task.text}</h3>
+                {editingTaskId === selectedTask.task.id ? (
+                  <input
+                    type="text"
+                    className="task-title-edit"
+                    value={editingTitle}
+                    onChange={(e) => setEditingTitle(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        updateTaskTitle(selectedTask.listIndex, selectedTask.taskIndex, editingTitle);
+                        setEditingTaskId(null);
+                      } else if (e.key === 'Escape') {
+                        setEditingTaskId(null);
+                      }
+                    }}
+                    onBlur={() => {
+                      if (editingTitle.trim()) {
+                        updateTaskTitle(selectedTask.listIndex, selectedTask.taskIndex, editingTitle);
+                      }
+                      setEditingTaskId(null);
+                    }}
+                    autoFocus
+                  />
+                ) : (
+                  <>
+                    <h3>{selectedTask.task.text}</h3>
+                    {(!isSharedBoard || (isSharedBoard && currentBoard.collaborators.find(c => c.id === user.id)?.role !== 'observer')) && (
+                      <button
+                        className="edit-title-btn"
+                        onClick={() => {
+                          setEditingTaskId(selectedTask.task.id);
+                          setEditingTitle(selectedTask.task.text);
+                        }}
+                      >
+                        ✎
+                      </button>
+                    )}
+                  </>
+                )}
                 <button className="close-btn" onClick={() => setSelectedTask(null)}>×</button>
               </div>
               <div className="comments-section">
@@ -1262,7 +1432,23 @@ const App = () => {
     setUser(userData);
   };
 
-  return user ? <TaskBoard user={user} /> : <Auth onLogin={handleLogin} />;
+  const handleLogout = () => {
+    localStorage.removeItem('currentUser');
+    setUser(null);
+  };
+
+  if (!user) {
+    return <Auth onLogin={handleLogin} />;
+  }
+
+  return (
+    <Router>
+      <Routes>
+        <Route path="/profile" element={<Profile user={user} onLogout={handleLogout} />} />
+        <Route path="/" element={<TaskBoard user={user} onLogout={handleLogout} />} />
+      </Routes>
+    </Router>
+  );
 };
 
 export default App;
