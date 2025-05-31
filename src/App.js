@@ -47,7 +47,7 @@ const TaskBoard = ({ user }) => {
           title: "Moja pierwsza tablica",
           lists: [
             { title: "Do zrobienia", tasks: ["Zadanie 1", "Zadanie 2"] },
-            { title: "W toku 2", tasks: [] },
+            { title: "W toku", tasks: [] },
             { title: "Zrobione", tasks: [] },
           ],
           collaborators: [],
