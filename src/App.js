@@ -22,6 +22,18 @@ const TaskBoard = ({ user, onLogout }) => {
   const [commentInput, setCommentInput] = useState('');
   const [isCommentView, setIsCommentView] = useState(false);
 
+  const autoResizeTextarea = (element) => {
+    if (element) {
+      element.style.height = 'auto';
+      element.style.height = element.scrollHeight + 'px';
+    }
+  };
+
+  const handleTextareaChange = (e, setter) => {
+    setter(e.target.value);
+    autoResizeTextarea(e.target);
+  };
+
   // Function to clean up all drag states
   const cleanupDragStates = () => {
     document.querySelectorAll('.list-table').forEach(list => {
@@ -972,6 +984,15 @@ const TaskBoard = ({ user, onLogout }) => {
       }
     });
     setEditingTitle(task.text);
+    setEditingTaskId(task.id);
+
+    // Set initial height after a small delay to ensure the textarea is rendered
+    setTimeout(() => {
+      const textarea = document.querySelector('.task-title-edit');
+      if (textarea) {
+        autoResizeTextarea(textarea);
+      }
+    }, 0);
   };
 
   const handleCommentsClick = (e, listIndex, taskIndex, task) => {
@@ -1004,6 +1025,16 @@ const TaskBoard = ({ user, onLogout }) => {
       }
     });
   };
+
+  // Add effect to handle initial textarea height when editing starts
+  useEffect(() => {
+    if (editingTaskId) {
+      const textarea = document.querySelector('.task-title-edit');
+      if (textarea) {
+        autoResizeTextarea(textarea);
+      }
+    }
+  }, [editingTaskId]);
 
   // Add effect to handle window resize
   useEffect(() => {
@@ -1369,9 +1400,9 @@ const TaskBoard = ({ user, onLogout }) => {
                             <textarea
                               className="task-title-edit"
                               value={editingTitle}
-                              onChange={(e) => setEditingTitle(e.target.value)}
+                              onChange={(e) => handleTextareaChange(e, setEditingTitle)}
                               onKeyDown={(e) => {
-                                if (e.key === 'Enter') {
+                                if (e.key === 'Enter' && !e.shiftKey) {
                                   e.preventDefault();
                                   updateTaskTitle(listIndex, taskIndex, editingTitle);
                                   setEditingTaskId(null);
@@ -1389,12 +1420,30 @@ const TaskBoard = ({ user, onLogout }) => {
                               }}
                               onClick={(e) => e.stopPropagation()}
                               autoFocus
-                              maxLength={30}
+                              maxLength={60}
                               rows={1}
+                              style={{ 
+                                resize: 'none',
+                                overflow: 'hidden',
+                                minHeight: '20px',
+                                height: 'auto'
+                              }}
                             />
                           ) : (
                             // Title Display Mode
-                            <span>{task.text}</span>
+                            <span style={{ 
+                              whiteSpace: 'normal',
+                              wordWrap: 'break-word',
+                              display: 'block',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              display: '-webkit-box',
+                              WebkitLineClamp: 3,
+                              WebkitBoxOrient: 'vertical',
+                              width: '100%',
+                              maxWidth: 'calc(100% - 2px)',
+                              paddingRight: '2px'
+                            }}>{task.text}</span>
                           )}
                         </div>
 
@@ -1492,9 +1541,9 @@ const TaskBoard = ({ user, onLogout }) => {
                         <textarea
                           className="task-title-edit"
                           value={editingTitle}
-                          onChange={(e) => setEditingTitle(e.target.value)}
+                          onChange={(e) => handleTextareaChange(e, setEditingTitle)}
                           onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
+                            if (e.key === 'Enter' && !e.shiftKey) {
                               e.preventDefault();
                               updateTaskTitle(selectedTask.listIndex, selectedTask.taskIndex, editingTitle);
                               setEditingTaskId(null);
@@ -1509,8 +1558,14 @@ const TaskBoard = ({ user, onLogout }) => {
                             setEditingTaskId(null);
                           }}
                           autoFocus
-                          maxLength={30}
+                          maxLength={60}
                           rows={1}
+                          style={{ 
+                            resize: 'none',
+                            overflow: 'hidden',
+                            minHeight: '20px',
+                            height: 'auto'
+                          }}
                         />
                       </div>
                       <div className="task-content">
