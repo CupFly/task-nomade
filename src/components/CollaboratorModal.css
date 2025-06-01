@@ -15,8 +15,11 @@
   justify-content: center;
   align-items: center;
   z-index: 1000;
-  backdrop-filter: blur(8px);
-  animation: fadeIn 0.3s ease-out;
+  backdrop-filter: blur(12px);
+  animation: fadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 
 @keyframes fadeIn {
@@ -32,7 +35,7 @@
 .collaborator-modal {
   background: var(--background-light);
   padding: 32px;
-  border-radius: 16px;
+  border-radius: 24px;
   width: 90%;
   max-width: 500px;
   max-height: 80vh;
@@ -41,37 +44,41 @@
   color: var(--text-primary);
   box-shadow: var(--shadow-lg);
   border: 1px solid var(--border-color);
-  animation: slideUp 0.3s ease-out;
+  animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-style: preserve-3d;
+  perspective: 1000px;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
 }
 
-@keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* Custom scrollbar for modal */
+/* Hide scrollbar for Chrome, Safari and Opera */
 .collaborator-modal::-webkit-scrollbar {
-  width: 8px;
+  display: none;
 }
 
-.collaborator-modal::-webkit-scrollbar-track {
-  background: var(--background-dark);
-  border-radius: 4px;
-}
-
-.collaborator-modal::-webkit-scrollbar-thumb {
-  background: var(--border-color);
-  border-radius: 4px;
-}
-
+/* Remove all scrollbar styles since we're hiding them */
+.collaborator-modal::-webkit-scrollbar-track,
+.collaborator-modal::-webkit-scrollbar-thumb,
 .collaborator-modal::-webkit-scrollbar-thumb:hover {
-  background: var(--primary);
+  display: none;
+}
+
+.collaborator-modal::before {
+  content: '';
+  position: absolute;
+  top: -1px;
+  left: -1px;
+  right: -1px;
+  bottom: -1px;
+  background: linear-gradient(45deg, var(--primary), var(--secondary));
+  border-radius: 24px;
+  z-index: -1;
+  opacity: 0.1;
+  transition: opacity 0.3s ease;
+}
+
+.collaborator-modal:hover::before {
+  opacity: 0.2;
 }
 
 /* Modal header */
@@ -82,6 +89,19 @@
   margin-bottom: 32px;
   padding-bottom: 20px;
   border-bottom: 1px solid var(--border-color);
+  position: relative;
+}
+
+.modal-header::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100px;
+  height: 2px;
+  background: var(--gradient-1);
+  border-radius: 2px;
 }
 
 .modal-header h2 {
@@ -92,6 +112,25 @@
   background: var(--gradient-1);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
+  position: relative;
+}
+
+.modal-header h2::after {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: var(--gradient-1);
+  border-radius: 2px;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.3s ease;
+}
+
+.modal-header:hover h2::after {
+  transform: scaleX(1);
 }
 
 /* Close button */
@@ -103,14 +142,39 @@
   cursor: pointer;
   padding: 8px;
   line-height: 1;
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.close-btn::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 120%;
+  height: 120%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.2) 0%, transparent 70%);
+  transform: translate(-50%, -50%) scale(0);
+  opacity: 0;
+  transition: transform 0.5s ease, opacity 0.3s ease;
 }
 
 .close-btn:hover {
   color: var(--text-primary);
   background: var(--surface);
   transform: rotate(90deg);
+}
+
+.close-btn:hover::before {
+  transform: translate(-50%, -50%) scale(1);
+  opacity: 1;
 }
 
 /* Collaborator form */
@@ -128,38 +192,42 @@
   width: 100%;
   padding: 14px;
   background: var(--surface);
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
+  border: 2px solid var(--border-color);
+  border-radius: 12px;
   color: var(--text-primary);
   font-size: 15px;
   outline: none;
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   box-sizing: border-box;
 }
 
 .form-group input:focus,
 .form-group select:focus {
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(108, 99, 255, 0.2);
-  transform: translateY(-1px);
+  box-shadow: var(--glow-primary);
+  transform: translateY(-2px);
 }
 
 /* Error message */
 .error-message {
   background: var(--gradient-2);
   color: white;
-  padding: 12px;
-  border-radius: 8px;
-  margin-bottom: 16px;
+  padding: 16px;
+  border-radius: 12px;
+  margin-bottom: 24px;
   font-size: 14px;
   text-align: center;
-  animation: shake 0.5s ease-in-out;
+  animation: shake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97);
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+  box-shadow: var(--glow-error);
 }
 
 @keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-5px); }
-  75% { transform: translateX(5px); }
+  10%, 90% { transform: translate3d(-1px, 0, 0); }
+  20%, 80% { transform: translate3d(2px, 0, 0); }
+  30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+  40%, 60% { transform: translate3d(4px, 0, 0); }
 }
 
 /* Add collaborator button */
@@ -167,22 +235,42 @@
   background: var(--gradient-1);
   color: white;
   border: none;
-  border-radius: 8px;
+  border-radius: 12px;
   padding: 14px 24px;
   font-size: 15px;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   width: 100%;
+  position: relative;
+  overflow: hidden;
+}
+
+.add-collaborator-btn::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 120%;
+  height: 120%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.3) 0%, transparent 70%);
+  transform: translate(-50%, -50%) scale(0);
+  opacity: 0;
+  transition: transform 0.5s ease, opacity 0.3s ease;
 }
 
 .add-collaborator-btn:hover {
   transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--glow-primary), var(--shadow-hover);
+}
+
+.add-collaborator-btn:hover::before {
+  transform: translate(-50%, -50%) scale(1);
+  opacity: 1;
 }
 
 .add-collaborator-btn:active {
-  transform: translateY(0);
+  transform: translateY(1px);
 }
 
 /* Collaborator list */
@@ -199,12 +287,31 @@
   border-radius: 12px;
   margin-bottom: 12px;
   border: 1px solid var(--border-color);
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.collaborator-item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, transparent 0%, rgba(255, 255, 255, 0.1) 50%, transparent 100%);
+  transform: translateX(-100%) skewX(-15deg);
+  transition: transform 0.5s ease;
+}
+
+.collaborator-item:hover::before {
+  transform: translateX(100%) skewX(-15deg);
 }
 
 .collaborator-item:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-sm);
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: var(--shadow-md);
+  border-color: var(--primary);
 }
 
 .collaborator-info {
@@ -224,6 +331,21 @@
   color: white;
   font-weight: bold;
   font-size: 18px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  position: relative;
+}
+
+.collaborator-avatar::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  background: var(--gradient-1);
+  border-radius: 50%;
+  z-index: -1;
 }
 
 .collaborator-details {
@@ -241,40 +363,98 @@
 .collaborator-role {
   color: var(--text-secondary);
   font-size: 13px;
+  position: relative;
+  padding-left: 16px;
+}
+
+.collaborator-role::before {
+  content: '•';
+  position: absolute;
+  left: 0;
+  color: var(--primary);
+  font-size: 1.5rem;
+  line-height: 1;
+  top: 50%;
+  transform: translateY(-50%);
 }
 
 .remove-collaborator-btn {
   background: var(--gradient-2);
   color: white;
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
   padding: 8px 16px;
   font-size: 14px;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.remove-collaborator-btn::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 120%;
+  height: 120%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.3) 0%, transparent 70%);
+  transform: translate(-50%, -50%) scale(0);
+  opacity: 0;
+  transition: transform 0.5s ease, opacity 0.3s ease;
 }
 
 .remove-collaborator-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-sm);
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: var(--glow-error), var(--shadow-hover);
+}
+
+.remove-collaborator-btn:hover::before {
+  transform: translate(-50%, -50%) scale(1);
+  opacity: 1;
 }
 
 /* Empty state */
 .no-collaborators {
-  color: #888;
+  color: var(--text-secondary);
   text-align: center;
-  padding: 16px;
-  font-size: 14px;
+  padding: 24px;
+  font-size: 15px;
+  background: var(--surface);
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  margin-top: 16px;
+  position: relative;
+  overflow: hidden;
+}
+
+.no-collaborators::before {
+  content: '';
+  position: absolute;
+  top: -1px;
+  left: -1px;
+  right: -1px;
+  bottom: -1px;
+  background: linear-gradient(45deg, var(--primary), var(--secondary));
+  border-radius: 12px;
+  z-index: -1;
+  opacity: 0.1;
+  transition: opacity 0.3s ease;
+}
+
+.no-collaborators:hover::before {
+  opacity: 0.2;
 }
 
 /* Responsive adjustments */
 @media (max-width: 480px) {
   .collaborator-modal {
-    padding: 16px;
+    padding: 24px;
+    border-radius: 16px;
   }
 
   .modal-header h2 {
-    font-size: 18px;
+    font-size: 20px;
   }
 
   .collaborator-item {
@@ -286,4 +466,24 @@
   .remove-collaborator-btn {
     width: 100%;
   }
+}
+
+/* Comments list - also hide scrollbars */
+.comments-list {
+  margin-bottom: 20px;
+  max-height: 300px;
+  overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.comments-list::-webkit-scrollbar {
+  display: none;
+}
+
+/* Remove all scrollbar styles for comments list */
+.comments-list::-webkit-scrollbar-track,
+.comments-list::-webkit-scrollbar-thumb,
+.comments-list::-webkit-scrollbar-thumb:hover {
+  display: none;
 } 
