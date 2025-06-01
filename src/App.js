@@ -18,6 +18,9 @@ const TaskBoard = ({ user, onLogout }) => {
   const [editingTaskId, setEditingTaskId] = useState(null);
   const [editingTitle, setEditingTitle] = useState("");
   const [modalPosition, setModalPosition] = useState({ x: 0, y: 0 });
+  const [selectedTask, setSelectedTask] = useState(null);
+  const [commentInput, setCommentInput] = useState('');
+  const [isCommentView, setIsCommentView] = useState(false);
 
   // Function to clean up all drag states
   const cleanupDragStates = () => {
@@ -879,9 +882,6 @@ const TaskBoard = ({ user, onLogout }) => {
     }
   };
 
-  const [selectedTask, setSelectedTask] = useState(null);
-  const [commentInput, setCommentInput] = useState('');
-
   const formatDate = (timestamp) => {
     const date = new Date(timestamp);
     return date.toLocaleString('pl-PL', {
@@ -934,16 +934,16 @@ const TaskBoard = ({ user, onLogout }) => {
 
   const handleEditClick = (e, listIndex, taskIndex, task) => {
     e.stopPropagation();
+    setIsCommentView(false);
     const taskElement = e.currentTarget.closest('.task');
     const rect = taskElement.getBoundingClientRect();
     
     // Calculate position to center the modal relative to the task
-    const modalWidth = rect.width + 24; // Width of the modal (task width + 24px)
-    const modalPadding = 16; // Padding of the modal
-    const taskPreviewPadding = 16; // Padding of the task preview
-    const verticalOffset = 8; // Reduced from 9 to 8 to move modal 1px higher
+    const modalWidth = rect.width + 24;
+    const modalPadding = 16;
+    const taskPreviewPadding = 16;
+    const verticalOffset = 8;
     
-    // Center horizontally by calculating the left position and subtract 2 pixels
     const leftPosition = rect.left - (modalWidth - rect.width) / 2 - 2;
     
     setModalPosition({
@@ -962,7 +962,38 @@ const TaskBoard = ({ user, onLogout }) => {
         height: rect.height
       }
     });
-    setEditingTitle(task.text); // Set the initial editing title to the task's current text
+    setEditingTitle(task.text);
+  };
+
+  const handleCommentsClick = (e, listIndex, taskIndex, task) => {
+    e.stopPropagation();
+    setIsCommentView(true);
+    const taskElement = e.currentTarget.closest('.task');
+    const rect = taskElement.getBoundingClientRect();
+    
+    const modalWidth = rect.width + 24;
+    const modalPadding = 16;
+    const taskPreviewPadding = 16;
+    const verticalOffset = 8;
+    
+    const leftPosition = rect.left - (modalWidth - rect.width) / 2 - 2;
+    
+    setModalPosition({
+      x: leftPosition - modalPadding,
+      y: rect.top - modalPadding - taskPreviewPadding + verticalOffset
+    });
+    
+    setSelectedTask({ 
+      listIndex, 
+      taskIndex, 
+      task,
+      taskRect: {
+        top: rect.top,
+        left: rect.left,
+        width: rect.width,
+        height: rect.height
+      }
+    });
   };
 
   // Add effect to handle window resize
@@ -1355,19 +1386,22 @@ const TaskBoard = ({ user, onLogout }) => {
                               className="task-checkbox"
                               onClick={(e) => e.stopPropagation()}
                             />
-                            {task.comments?.length > 0 && (
-                              <span className="comment-count">
-                                {task.comments.length} 💬
-                              </span>
-                            )}
+                            <button
+                              className="comment-count-btn"
+                              onClick={(e) => handleCommentsClick(e, listIndex, taskIndex, task)}
+                            >
+                              {task.comments?.length || 0} 💬
+                            </button>
                           </div>
                           {(!isSharedBoard || (isSharedBoard && currentBoard.collaborators.find(c => c.id === user.id)?.role !== 'observer')) && (
-                            <button 
-                              className="edit-task-btn"
-                              onClick={(e) => handleEditClick(e, listIndex, taskIndex, task)}
-                            >
-                              Edytuj
-                            </button>
+                            <div className="task-buttons">
+                              <button 
+                                className="edit-task-btn"
+                                onClick={(e) => handleEditClick(e, listIndex, taskIndex, task)}
+                              >
+                                Edytuj
+                              </button>
+                            </div>
                           )}
                         </div>
                       </li>
@@ -1420,184 +1454,189 @@ const TaskBoard = ({ user, onLogout }) => {
                 width: selectedTask.taskRect.width + 24
               }}
             >
-              {/* Edited Task Preview */}
-              <div className="edited-task-preview">
-                <div 
-                  className="task" 
-                  style={{ 
-                    backgroundColor: selectedTask.task.color || '#ffffff',
-                    width: `${selectedTask.taskRect.width + 24}px`
-                  }}
-                >
-                  <div className="task-title">
-                    <input
-                      type="text"
-                      className="task-title-edit"
-                      value={editingTitle}
-                      onChange={(e) => setEditingTitle(e.target.value)}
-                      maxLength={31}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          updateTaskTitle(selectedTask.listIndex, selectedTask.taskIndex, editingTitle);
-                          setEditingTaskId(null);
-                        } else if (e.key === 'Escape') {
-                          setEditingTaskId(null);
-                        }
-                      }}
-                      onBlur={() => {
-                        if (editingTitle.trim()) {
-                          updateTaskTitle(selectedTask.listIndex, selectedTask.taskIndex, editingTitle);
-                        }
-                        setEditingTaskId(null);
-                      }}
-                      autoFocus
-                    />
-                  </div>
-                  <div className="task-content">
-                    <div className="task-left">
-                      <input
-                        type="checkbox"
-                        checked={selectedTask.task.completed}
-                        onChange={() => toggleTaskCompletion(selectedTask.listIndex, selectedTask.taskIndex)}
-                        disabled={isSharedBoard && currentBoard.collaborators.find(c => c.id === user.id)?.role === 'observer'}
-                        className="task-checkbox"
-                        onClick={(e) => e.stopPropagation()}
-                      />
-                      {selectedTask.task.comments?.length > 0 && (
-                        <span className="comment-count">
-                          {selectedTask.task.comments.length} 💬
-                        </span>
-                      )}
-                    </div>
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                      {(!isSharedBoard || (isSharedBoard && currentBoard.collaborators.find(c => c.id === user.id)?.role !== 'observer')) && (
-                        <button 
-                          className="delete-task-btn"
-                          onClick={() => {
-                            removeTask(selectedTask.listIndex, selectedTask.taskIndex);
-                            setSelectedTask(null);
-                          }}
-                          style={{ width: '59px', backgroundColor: '#FF3333' }}
-                        >
-                          Usuń
-                        </button>
-                      )}
-                      <button 
-                        className="edit-task-btn"
-                        onClick={() => setSelectedTask(null)}
-                        style={{ width: '59px' }}
-                      >
-                        Stop
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Modal Header with Editable Title */}
-              <div className="task-modal-header">
-              </div>
-
-              {/* Color Picker Section */}
-              {(!isSharedBoard || (isSharedBoard && currentBoard.collaborators.find(c => c.id === user.id)?.role !== 'observer')) && (
-                <div className="task-color-picker">
-                  <label>Kolor zadania:</label>
-                  <div className="color-options">
-                    <button 
-                      className="color-option" 
-                      style={{ backgroundColor: '#FF6B6B' }}
-                      onClick={() => updateTaskColor(selectedTask.listIndex, selectedTask.taskIndex, '#FF6B6B')}
-                    />
-                    <button 
-                      className="color-option" 
-                      style={{ backgroundColor: '#4ECDC4' }}
-                      onClick={() => updateTaskColor(selectedTask.listIndex, selectedTask.taskIndex, '#4ECDC4')}
-                    />
-                    <button 
-                      className="color-option" 
-                      style={{ backgroundColor: '#FFD93D' }}
-                      onClick={() => updateTaskColor(selectedTask.listIndex, selectedTask.taskIndex, '#FFD93D')}
-                    />
-                    <button 
-                      className="color-option" 
-                      style={{ backgroundColor: '#95E1D3' }}
-                      onClick={() => updateTaskColor(selectedTask.listIndex, selectedTask.taskIndex, '#95E1D3')}
-                    />
-                    <button 
-                      className="color-option" 
-                      style={{ backgroundColor: '#F8B195' }}
-                      onClick={() => updateTaskColor(selectedTask.listIndex, selectedTask.taskIndex, '#F8B195')}
-                    />
-                    <button 
-                      className="color-option" 
-                      style={{ backgroundColor: '#6C5CE7' }}
-                      onClick={() => updateTaskColor(selectedTask.listIndex, selectedTask.taskIndex, '#6C5CE7')}
-                    />
-                    <button 
-                      className="color-option" 
-                      style={{ backgroundColor: '#A8E6CF' }}
-                      onClick={() => updateTaskColor(selectedTask.listIndex, selectedTask.taskIndex, '#A8E6CF')}
-                    />
-                    <button 
-                      className="color-option" 
-                      style={{ backgroundColor: '#FF8B94' }}
-                      onClick={() => updateTaskColor(selectedTask.listIndex, selectedTask.taskIndex, '#FF8B94')}
-                    />
-                  </div>
-                </div>
-              )}
-
-              {/* Comments Section */}
-              <div className="comments-section">
-                <h4>Komentarze</h4>
-                <div className="comments-list">
-                  {selectedTask.task.comments?.map((comment) => (
-                    <div key={comment.id} className="comment">
-                      <div className="comment-header">
-                        <span className="comment-author">{comment.username || comment.userEmail}</span>
-                        <span className="comment-date">{formatDate(comment.createdAt)}</span>
-                        {(comment.userId === user.id || (!isSharedBoard || currentBoard.ownerId === user.id)) && (
-                          <button
-                            className="remove-comment-btn"
-                            onClick={() => removeComment(selectedTask.listIndex, selectedTask.taskIndex, comment.id)}
-                          >
-                            Usuń
-                          </button>
-                        )}
-                      </div>
-                      <div className="comment-text">{comment.text}</div>
-                    </div>
-                  ))}
-                </div>
-                {(!isSharedBoard || (isSharedBoard && currentBoard.collaborators.find(c => c.id === user.id)?.role !== 'observer')) && (
-                  <div className="comment-input-container">
-                    <input
-                      type="text"
-                      className="comment-input"
-                      placeholder="Dodaj komentarz..."
-                      value={commentInput}
-                      onChange={(e) => setCommentInput(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" && commentInput.trim()) {
-                          addComment(selectedTask.listIndex, selectedTask.taskIndex, commentInput);
-                          setCommentInput('');
-                        }
-                      }}
-                    />
-                    <button
-                      className="add-comment-btn"
-                      onClick={() => {
-                        if (commentInput.trim()) {
-                          addComment(selectedTask.listIndex, selectedTask.taskIndex, commentInput);
-                          setCommentInput('');
-                        }
+              {!isCommentView ? (
+                <>
+                  {/* Edited Task Preview */}
+                  <div className="edited-task-preview">
+                    <div 
+                      className="task" 
+                      style={{ 
+                        backgroundColor: selectedTask.task.color || '#ffffff',
+                        width: `${selectedTask.taskRect.width + 24}px`
                       }}
                     >
-                      Dodaj
-                    </button>
+                      <div className="task-title">
+                        <input
+                          type="text"
+                          className="task-title-edit"
+                          value={editingTitle}
+                          onChange={(e) => setEditingTitle(e.target.value)}
+                          maxLength={31}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              updateTaskTitle(selectedTask.listIndex, selectedTask.taskIndex, editingTitle);
+                              setEditingTaskId(null);
+                            } else if (e.key === 'Escape') {
+                              setEditingTaskId(null);
+                            }
+                          }}
+                          onBlur={() => {
+                            if (editingTitle.trim()) {
+                              updateTaskTitle(selectedTask.listIndex, selectedTask.taskIndex, editingTitle);
+                            }
+                            setEditingTaskId(null);
+                          }}
+                          autoFocus
+                        />
+                      </div>
+                      <div className="task-content">
+                        <div className="task-left">
+                          <input
+                            type="checkbox"
+                            checked={selectedTask.task.completed}
+                            onChange={() => toggleTaskCompletion(selectedTask.listIndex, selectedTask.taskIndex)}
+                            disabled={isSharedBoard && currentBoard.collaborators.find(c => c.id === user.id)?.role === 'observer'}
+                            className="task-checkbox"
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                        </div>
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                          {(!isSharedBoard || (isSharedBoard && currentBoard.collaborators.find(c => c.id === user.id)?.role !== 'observer')) && (
+                            <button 
+                              className="delete-task-btn"
+                              onClick={() => {
+                                removeTask(selectedTask.listIndex, selectedTask.taskIndex);
+                                setSelectedTask(null);
+                              }}
+                              style={{ width: '59px', backgroundColor: '#FF3333' }}
+                            >
+                              Usuń
+                            </button>
+                          )}
+                          <button 
+                            className="edit-task-btn"
+                            onClick={() => setSelectedTask(null)}
+                            style={{ width: '59px' }}
+                          >
+                            Stop
+                          </button>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                )}
-              </div>
+
+                  {/* Color Picker Section */}
+                  {(!isSharedBoard || (isSharedBoard && currentBoard.collaborators.find(c => c.id === user.id)?.role !== 'observer')) && (
+                    <div className="task-color-picker">
+                      <label>Kolor zadania:</label>
+                      <div className="color-options">
+                        <button 
+                          className="color-option" 
+                          style={{ backgroundColor: '#FF6B6B' }}
+                          onClick={() => updateTaskColor(selectedTask.listIndex, selectedTask.taskIndex, '#FF6B6B')}
+                        />
+                        <button 
+                          className="color-option" 
+                          style={{ backgroundColor: '#4ECDC4' }}
+                          onClick={() => updateTaskColor(selectedTask.listIndex, selectedTask.taskIndex, '#4ECDC4')}
+                        />
+                        <button 
+                          className="color-option" 
+                          style={{ backgroundColor: '#FFD93D' }}
+                          onClick={() => updateTaskColor(selectedTask.listIndex, selectedTask.taskIndex, '#FFD93D')}
+                        />
+                        <button 
+                          className="color-option" 
+                          style={{ backgroundColor: '#95E1D3' }}
+                          onClick={() => updateTaskColor(selectedTask.listIndex, selectedTask.taskIndex, '#95E1D3')}
+                        />
+                        <button 
+                          className="color-option" 
+                          style={{ backgroundColor: '#F8B195' }}
+                          onClick={() => updateTaskColor(selectedTask.listIndex, selectedTask.taskIndex, '#F8B195')}
+                        />
+                        <button 
+                          className="color-option" 
+                          style={{ backgroundColor: '#6C5CE7' }}
+                          onClick={() => updateTaskColor(selectedTask.listIndex, selectedTask.taskIndex, '#6C5CE7')}
+                        />
+                        <button 
+                          className="color-option" 
+                          style={{ backgroundColor: '#A8E6CF' }}
+                          onClick={() => updateTaskColor(selectedTask.listIndex, selectedTask.taskIndex, '#A8E6CF')}
+                        />
+                        <button 
+                          className="color-option" 
+                          style={{ backgroundColor: '#FF8B94' }}
+                          onClick={() => updateTaskColor(selectedTask.listIndex, selectedTask.taskIndex, '#FF8B94')}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <>
+                  {/* Comments Section */}
+                  <div className="comments-section">
+                    <div className="comments-header">
+                      <h4>Komentarze: {selectedTask.task.text}</h4>
+                      <button 
+                        className="close-comments-btn"
+                        onClick={() => setSelectedTask(null)}
+                      >
+                        ✕
+                      </button>
+                    </div>
+                    <div className="comments-list">
+                      {selectedTask.task.comments?.map((comment) => (
+                        <div key={comment.id} className="comment">
+                          <div className="comment-header">
+                            <span className="comment-author">{comment.username || comment.userEmail}</span>
+                            <span className="comment-date">{formatDate(comment.createdAt)}</span>
+                            {(comment.userId === user.id || (!isSharedBoard || currentBoard.ownerId === user.id)) && (
+                              <button
+                                className="remove-comment-btn"
+                                onClick={() => removeComment(selectedTask.listIndex, selectedTask.taskIndex, comment.id)}
+                              >
+                                Usuń
+                              </button>
+                            )}
+                          </div>
+                          <div className="comment-text">{comment.text}</div>
+                        </div>
+                      ))}
+                    </div>
+                    {(!isSharedBoard || (isSharedBoard && currentBoard.collaborators.find(c => c.id === user.id)?.role !== 'observer')) && (
+                      <div className="comment-input-container">
+                        <input
+                          type="text"
+                          className="comment-input"
+                          placeholder="Dodaj komentarz..."
+                          value={commentInput}
+                          onChange={(e) => setCommentInput(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" && commentInput.trim()) {
+                              addComment(selectedTask.listIndex, selectedTask.taskIndex, commentInput);
+                              setCommentInput('');
+                            }
+                          }}
+                        />
+                        <button
+                          className="add-comment-btn"
+                          onClick={() => {
+                            if (commentInput.trim()) {
+                              addComment(selectedTask.listIndex, selectedTask.taskIndex, commentInput);
+                              setCommentInput('');
+                            }
+                          }}
+                        >
+                          Dodaj
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
             </div>
           </div>
         )}
