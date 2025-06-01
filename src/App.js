@@ -624,10 +624,13 @@ const TaskBoard = ({ user, onLogout }) => {
       const sharedFromIndex = fromIndex - boards.length;
       const sharedToIndex = toIndex - boards.length;
 
-      const newSharedOrder = [...boardOrder.shared];
-      const [movedItem] = newSharedOrder.splice(sharedFromIndex, 1);
-      newSharedOrder.splice(sharedToIndex, 0, movedItem);
+      const newSharedBoards = [...sharedBoards];
+      const [movedBoard] = newSharedBoards.splice(sharedFromIndex, 1);
+      newSharedBoards.splice(sharedToIndex, 0, movedBoard);
+      setSharedBoards(newSharedBoards);
 
+      // Update the order
+      const newSharedOrder = Array.from({ length: newSharedBoards.length }, (_, i) => i);
       setBoardOrder(prev => ({
         ...prev,
         shared: newSharedOrder
@@ -643,10 +646,13 @@ const TaskBoard = ({ user, onLogout }) => {
       }
     } else {
       // Moving owned boards
-      const newOwnedOrder = [...boardOrder.owned];
-      const [movedItem] = newOwnedOrder.splice(fromIndex, 1);
-      newOwnedOrder.splice(toIndex, 0, movedItem);
+      const newBoards = [...boards];
+      const [movedBoard] = newBoards.splice(fromIndex, 1);
+      newBoards.splice(toIndex, 0, movedBoard);
+      setBoards(newBoards);
 
+      // Update the order
+      const newOwnedOrder = Array.from({ length: newBoards.length }, (_, i) => i);
       setBoardOrder(prev => ({
         ...prev,
         owned: newOwnedOrder
@@ -661,6 +667,9 @@ const TaskBoard = ({ user, onLogout }) => {
         setCurrentBoardIndex(currentBoardIndex + 1);
       }
     }
+
+    // Force a refresh of the board effects
+    setForceUpdate(prev => prev + 1);
   };
 
   // Function to get ordered boards
@@ -1357,13 +1366,13 @@ const TaskBoard = ({ user, onLogout }) => {
                         <div className="task-title">
                           {editingTaskId === task.id ? (
                             // Title Edit Mode
-                            <input
-                              type="text"
+                            <textarea
                               className="task-title-edit"
                               value={editingTitle}
                               onChange={(e) => setEditingTitle(e.target.value)}
                               onKeyDown={(e) => {
                                 if (e.key === 'Enter') {
+                                  e.preventDefault();
                                   updateTaskTitle(listIndex, taskIndex, editingTitle);
                                   setEditingTaskId(null);
                                   e.stopPropagation();
@@ -1380,7 +1389,8 @@ const TaskBoard = ({ user, onLogout }) => {
                               }}
                               onClick={(e) => e.stopPropagation()}
                               autoFocus
-                              maxLength={31}
+                              maxLength={30}
+                              rows={1}
                             />
                           ) : (
                             // Title Display Mode
@@ -1479,14 +1489,13 @@ const TaskBoard = ({ user, onLogout }) => {
                       }}
                     >
                       <div className="task-title">
-                        <input
-                          type="text"
+                        <textarea
                           className="task-title-edit"
                           value={editingTitle}
                           onChange={(e) => setEditingTitle(e.target.value)}
-                          maxLength={31}
                           onKeyDown={(e) => {
                             if (e.key === 'Enter') {
+                              e.preventDefault();
                               updateTaskTitle(selectedTask.listIndex, selectedTask.taskIndex, editingTitle);
                               setEditingTaskId(null);
                             } else if (e.key === 'Escape') {
@@ -1500,6 +1509,8 @@ const TaskBoard = ({ user, onLogout }) => {
                             setEditingTaskId(null);
                           }}
                           autoFocus
+                          maxLength={30}
+                          rows={1}
                         />
                       </div>
                       <div className="task-content">
