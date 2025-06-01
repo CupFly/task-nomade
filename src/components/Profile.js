@@ -384,7 +384,7 @@ const Profile = ({ user, onLogout }) => {
             {showEmailForm && (
               <div className="edit-form">
                 <input
-                  type="email"
+                  type="text"
                   placeholder="Nowy email"
                   value={newEmail}
                   onChange={(e) => setNewEmail(e.target.value)}

@@ -124,7 +124,7 @@ const Auth = ({ onLogin }) => {
           {/* Email input */}
           <div className="form-group">
             <input
-              type={isLogin ? "text" : "email"}
+              type="text"
               placeholder="Email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}

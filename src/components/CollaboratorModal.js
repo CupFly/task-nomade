@@ -94,7 +94,7 @@ const CollaboratorModal = ({ board, onClose, onAddCollaborator, onRemoveCollabor
           {error && <div className="error-message">{error}</div>}
           <div className="form-group">
             <input
-              type="email"
+              type="text"
               placeholder="Email współpracownika"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
