@@ -56,7 +56,7 @@ body {
   background: #1E1E1E;
   border-radius: 12px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-  padding: 16px;
+  padding: 0;
   color: #D1D1D1;
   cursor: move;
   transition: all 0.2s ease;
@@ -75,8 +75,8 @@ body {
   font-weight: 600;
   background-color: #5A00FF;
   color: white;
-  border-radius: 8px;
-  margin: 0 -16px 16px -16px;
+  border-radius: 12px 12px 0 0;
+  margin: 0;
   padding-left: 16px;
   flex-shrink: 0;
   display: flex;
@@ -86,7 +86,7 @@ body {
 
 .task-list {
   list-style: none;
-  padding: 0;
+  padding: 16px;
   margin: 0;
   overflow-y: auto;
   flex: 1;
