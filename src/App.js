@@ -52,7 +52,7 @@ const TaskBoard = ({ user, onLogout }) => {
         {
           title: "Moja pierwsza tablica",
           lists: [
-            { title: "Do zrobienia", tasks: ["Zadanie 1", "Zadanie 2"] },
+            { title: "Do zrobienia", tasks: [] },
             { title: "W toku", tasks: [] },
             { title: "Zrobione", tasks: [] },
           ],
@@ -62,6 +62,24 @@ const TaskBoard = ({ user, onLogout }) => {
       ];
       setBoards(defaultBoards);
       localStorage.setItem(`boards_${user.id}`, JSON.stringify(defaultBoards));
+    }
+
+    // Update existing shared boards with owner usernames
+    const savedSharedBoards = localStorage.getItem(`shared_boards_${user.id}`);
+    if (savedSharedBoards) {
+      const sharedBoards = JSON.parse(savedSharedBoards);
+      const users = JSON.parse(localStorage.getItem('users') || '[]');
+      
+      const updatedSharedBoards = sharedBoards.map(board => {
+        const owner = users.find(u => u.id === board.ownerId);
+        return {
+          ...board,
+          ownerUsername: owner?.username || null
+        };
+      });
+      
+      setSharedBoards(updatedSharedBoards);
+      localStorage.setItem(`shared_boards_${user.id}`, JSON.stringify(updatedSharedBoards));
     }
   }, [user.id]);
 
@@ -705,12 +723,17 @@ const TaskBoard = ({ user, onLogout }) => {
     setBoards(newBoards);
     localStorage.setItem(`boards_${user.id}`, JSON.stringify(newBoards));
 
+    // Get owner's username from users array
+    const users = JSON.parse(localStorage.getItem('users') || '[]');
+    const ownerData = users.find(u => u.id === user.id);
+
     // Add board to collaborator's shared boards
     const collaboratorSharedBoards = JSON.parse(localStorage.getItem(`shared_boards_${collaborator.id}`) || '[]');
     const sharedBoardForCollaborator = {
       ...updatedBoard,
       ownerId: user.id,
       ownerEmail: user.email,
+      ownerUsername: ownerData?.username || null,
       lastModified: Date.now()
     };
     collaboratorSharedBoards.push(sharedBoardForCollaborator);
@@ -1092,7 +1115,7 @@ const TaskBoard = ({ user, onLogout }) => {
                     <span>{board.title}</span>
                     {isSharedBoard && board.ownerEmail && (
                       <span className="shared-label">
-                        Udostępniona przez {board.ownerEmail}
+                        {board.ownerUsername || board.ownerEmail}
                       </span>
                     )}
                   </div>
@@ -1145,12 +1168,6 @@ const TaskBoard = ({ user, onLogout }) => {
             </div>
           </div>
         </div>
-        <button 
-          className="logout-button"
-          onClick={handleLogout}
-        >
-          Wyloguj się
-        </button>
       </div>
 
       <div className="main-content">
@@ -1615,16 +1632,18 @@ const App = () => {
     setUser(null);
   };
 
-  if (!user) {
-    return <Auth onLogin={handleLogin} />;
-  }
-
   return (
     <Router>
-      <Routes>
-        <Route path="/profile" element={<Profile user={user} onLogout={handleLogout} />} />
-        <Route path="/" element={<TaskBoard user={user} onLogout={handleLogout} />} />
-      </Routes>
+      {!user ? (
+        <Routes>
+          <Route path="*" element={<Auth onLogin={handleLogin} />} />
+        </Routes>
+      ) : (
+        <Routes>
+          <Route path="/" element={<TaskBoard user={user} onLogout={handleLogout} />} />
+          <Route path="/profile" element={<Profile user={user} onLogout={handleLogout} />} />
+        </Routes>
+      )}
     </Router>
   );
 };

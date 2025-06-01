@@ -5,6 +5,32 @@
   justify-content: center;
   align-items: flex-start;
   padding: 2rem;
+  overflow-y: auto;
+  max-height: 100vh;
+}
+
+/* Custom Scrollbar Styling */
+.profile-page::-webkit-scrollbar {
+  width: 8px;
+}
+
+.profile-page::-webkit-scrollbar-track {
+  background: #181818;
+}
+
+.profile-page::-webkit-scrollbar-thumb {
+  background: #444;
+  border-radius: 4px;
+}
+
+.profile-page::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* For Firefox */
+.profile-page {
+  scrollbar-width: thin;
+  scrollbar-color: #444 #181818;
 }
 
 .profile-container {
@@ -14,6 +40,7 @@
   width: 100%;
   max-width: 800px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  margin-bottom: 2rem;
 }
 
 .profile-header {

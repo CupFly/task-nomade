@@ -11,9 +11,11 @@
  */
 
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import './Auth.css';
 
 const Auth = ({ onLogin }) => {
+  const navigate = useNavigate();
   // State management for form fields and UI
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
@@ -40,36 +42,43 @@ const Auth = ({ onLogin }) => {
     e.preventDefault();
     setError('');
 
-    // Input validation
-    if (!email || !password) {
-      setError('Wszystkie pola są wymagane');
-      return;
-    }
-
-    if (!isValidEmail(email)) {
-      setError('Nieprawidłowy format adresu email');
-      return;
-    }
-
-    if (password.length < 6) {
-      setError('Hasło musi mieć co najmniej 6 znaków');
-      return;
-    }
-
-    // Get existing users from localStorage
-    const users = JSON.parse(localStorage.getItem('users') || '[]');
-
     if (isLogin) {
-      // Login logic
+      // Login logic - only check if fields are not empty
+      if (!email.trim() || !password.trim()) {
+        setError('Wszystkie pola są wymagane');
+        return;
+      }
+
+      // Get existing users and check credentials without any format validation
+      const users = JSON.parse(localStorage.getItem('users') || '[]');
       const user = users.find(u => u.email === email && u.password === password);
       if (user) {
         localStorage.setItem('currentUser', JSON.stringify(user));
         onLogin(user);
+        navigate('/'); // Navigate to main menu after login
       } else {
         setError('Nieprawidłowy email lub hasło');
       }
     } else {
-      // Registration logic
+      // Registration logic - full validation
+      if (!email || !password) {
+        setError('Wszystkie pola są wymagane');
+        return;
+      }
+
+      if (!isValidEmail(email)) {
+        setError('Nieprawidłowy format adresu email');
+        return;
+      }
+
+      if (password.length < 6) {
+        setError('Hasło musi mieć co najmniej 6 znaków');
+        return;
+      }
+
+      // Get existing users from localStorage
+      const users = JSON.parse(localStorage.getItem('users') || '[]');
+
       if (users.some(u => u.email === email)) {
         setError('Użytkownik z tym adresem email już istnieje');
         return;
@@ -97,6 +106,7 @@ const Auth = ({ onLogin }) => {
       localStorage.setItem('users', JSON.stringify([...users, newUser]));
       localStorage.setItem('currentUser', JSON.stringify(newUser));
       onLogin(newUser);
+      navigate('/'); // Navigate to main menu after registration
     }
   };
 
@@ -109,7 +119,7 @@ const Auth = ({ onLogin }) => {
           {/* Email input */}
           <div className="form-group">
             <input
-              type="email"
+              type={isLogin ? "text" : "email"}
               placeholder="Email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
