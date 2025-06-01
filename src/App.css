@@ -63,7 +63,7 @@ body {
   display: flex;
   flex-direction: column;
   max-height: calc(100vh - 100px);
-  min-height: 200px;
+  min-height: 150px;
   flex-shrink: 0;
   border: 1px solid #333;
 }
@@ -1069,4 +1069,20 @@ body {
 .profile-form input[type="email"]:focus {
   border-color: #5A00FF;
   box-shadow: 0 0 0 2px rgba(90, 0, 255, 0.2);
+}
+
+.list-table:last-child {
+  width: 280px;
+  min-width: 280px;
+  min-height: 100px;
+  max-height: 150px;
+  padding: 16px;
+}
+
+.list-table:last-child .list-input {
+  margin-bottom: 8px;
+}
+
+.list-table:last-child .add-list-btn {
+  width: 100%;
 }
