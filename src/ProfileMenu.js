@@ -24,8 +24,16 @@ const ProfileMenu = ({ user, onLogout }) => {
         className="profile-trigger"
         onClick={() => setIsOpen(!isOpen)}
       >
-        <div className="profile-avatar">
-          {user.email[0].toUpperCase()}
+        <div 
+          className="profile-avatar"
+          style={user.profilePicture ? {
+            backgroundImage: `url(${user.profilePicture})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            fontSize: 0
+          } : {}}
+        >
+          {!user.profilePicture && user.email[0].toUpperCase()}
         </div>
         <span className="profile-email">{user.email}</span>
       </div>
@@ -33,8 +41,16 @@ const ProfileMenu = ({ user, onLogout }) => {
       {isOpen && (
         <div className="profile-dropdown">
           <div className="profile-header">
-            <div className="profile-avatar large">
-              {user.email[0].toUpperCase()}
+            <div 
+              className="profile-avatar large"
+              style={user.profilePicture ? {
+                backgroundImage: `url(${user.profilePicture})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                fontSize: 0
+              } : {}}
+            >
+              {!user.profilePicture && user.email[0].toUpperCase()}
             </div>
             <div className="profile-info">
               <span className="profile-email">{user.email}</span>

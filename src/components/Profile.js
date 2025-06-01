@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './Profile.css';
 
 const Profile = ({ user, onLogout }) => {
   const navigate = useNavigate();
+  const fileInputRef = useRef(null);
   const [newEmail, setNewEmail] = useState('');
   const [newUsername, setNewUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -27,6 +28,7 @@ const Profile = ({ user, onLogout }) => {
   const [showDeleteForm, setShowDeleteForm] = useState(false);
   const [deletePassword, setDeletePassword] = useState('');
   const [deleteError, setDeleteError] = useState('');
+  const [profilePicture, setProfilePicture] = useState(user.profilePicture || null);
 
   const handleUsernameChange = () => {
     setUsernameError('');
@@ -235,12 +237,73 @@ const Profile = ({ user, onLogout }) => {
     onLogout();
   };
 
+  const handleProfilePictureClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleProfilePictureChange = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      alert('Proszę wybrać plik obrazu');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Obraz nie może być większy niż 5MB');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const base64Image = e.target?.result;
+      if (base64Image) {
+        // Update profile picture in state
+        setProfilePicture(base64Image);
+
+        // Update user in localStorage
+        const users = JSON.parse(localStorage.getItem('users') || '[]');
+        const updatedUsers = users.map(u =>
+          u.id === user.id ? { ...u, profilePicture: base64Image } : u
+        );
+        localStorage.setItem('users', JSON.stringify(updatedUsers));
+
+        // Update current user
+        const updatedUser = { ...user, profilePicture: base64Image };
+        localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
   return (
     <div className="profile-page">
       <div className="profile-container">
         <div className="profile-header">
-          <div className="profile-avatar">
-            {user.username ? user.username[0].toUpperCase() : user.email[0].toUpperCase()}
+          <div 
+            className="profile-avatar"
+            onClick={handleProfilePictureClick}
+            style={profilePicture ? {
+              backgroundImage: `url(${profilePicture})`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              fontSize: 0
+            } : {}}
+          >
+            {!profilePicture && (user.username ? user.username[0].toUpperCase() : user.email[0].toUpperCase())}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleProfilePictureChange}
+              style={{ display: 'none' }}
+            />
+            <div className="profile-avatar-overlay">
+              <span>Zmień zdjęcie</span>
+            </div>
           </div>
           <div className="profile-header-info">
             <h1>{user.username || user.email}</h1>

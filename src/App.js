@@ -1041,7 +1041,20 @@ const TaskBoard = ({ user, onLogout }) => {
           className="header clickable"
           onClick={() => navigate('/profile')}
         >
-          <h1>Witaj, {user.username || user.email}</h1>
+          <div className="header-content">
+            <div 
+              className="profile-avatar small"
+              style={user.profilePicture ? {
+                backgroundImage: `url(${user.profilePicture})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                fontSize: 0
+              } : {}}
+            >
+              {!user.profilePicture && (user.username ? user.username[0].toUpperCase() : user.email[0].toUpperCase())}
+            </div>
+            <h1>Witaj, {user.username || user.email}</h1>
+          </div>
         </div>
         <div className="boards-navigation">
           <div className="board-tabs">
