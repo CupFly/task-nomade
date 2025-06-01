@@ -42,6 +42,11 @@ const Profile = ({ user, onLogout }) => {
       setUsernameError('Nazwa użytkownika musi mieć co najmniej 3 znaki');
       return;
     }
+
+    if (newUsername.length > 10) {
+      setUsernameError('Nazwa użytkownika może mieć maksymalnie 10 znaków');
+      return;
+    }
     
     // Get all users and verify password
     const users = JSON.parse(localStorage.getItem('users') || '[]');
@@ -264,6 +269,7 @@ const Profile = ({ user, onLogout }) => {
                   value={newUsername}
                   onChange={(e) => setNewUsername(e.target.value)}
                   minLength={3}
+                  maxLength={10}
                 />
                 <div className="password-input-container">
                   <input

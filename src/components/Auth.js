@@ -84,14 +84,19 @@ const Auth = ({ onLogin }) => {
         return;
       }
 
-      if (username && username.length < 3) {
-        setError('Nazwa użytkownika musi mieć co najmniej 3 znaki');
-        return;
-      }
-
-      if (username && users.some(u => u.username === username)) {
-        setError('Ta nazwa użytkownika jest już zajęta');
-        return;
+      if (username) {
+        if (username.length < 3) {
+          setError('Nazwa użytkownika musi mieć co najmniej 3 znaki');
+          return;
+        }
+        if (username.length > 10) {
+          setError('Nazwa użytkownika może mieć maksymalnie 10 znaków');
+          return;
+        }
+        if (users.some(u => u.username === username)) {
+          setError('Ta nazwa użytkownika jest już zajęta');
+          return;
+        }
       }
 
       // Create new user
@@ -134,6 +139,7 @@ const Auth = ({ onLogin }) => {
                 placeholder="Nazwa użytkownika (opcjonalnie)"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
+                maxLength={10}
               />
             </div>
           )}

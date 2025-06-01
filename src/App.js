@@ -1336,6 +1336,7 @@ const TaskBoard = ({ user, onLogout }) => {
                               }}
                               onClick={(e) => e.stopPropagation()}
                               autoFocus
+                              maxLength={31}
                             />
                           ) : (
                             // Title Display Mode
@@ -1376,6 +1377,7 @@ const TaskBoard = ({ user, onLogout }) => {
                     <input
                       className="task-input"
                       placeholder="Nowe zadanie"
+                      maxLength={31}
                       onKeyDown={(e) => {
                         if (e.key === "Enter") {
                           addTask(listIndex, e.target.value);
@@ -1433,6 +1435,7 @@ const TaskBoard = ({ user, onLogout }) => {
                       className="task-title-edit"
                       value={editingTitle}
                       onChange={(e) => setEditingTitle(e.target.value)}
+                      maxLength={31}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter') {
                           updateTaskTitle(selectedTask.listIndex, selectedTask.taskIndex, editingTitle);
