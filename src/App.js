@@ -17,6 +17,7 @@ const TaskBoard = ({ user, onLogout }) => {
   const [forceUpdate, setForceUpdate] = useState(0);
   const [editingTaskId, setEditingTaskId] = useState(null);
   const [editingTitle, setEditingTitle] = useState("");
+  const [modalPosition, setModalPosition] = useState({ x: 0, y: 0 });
 
   // Function to clean up all drag states
   const cleanupDragStates = () => {
@@ -906,6 +907,77 @@ const TaskBoard = ({ user, onLogout }) => {
     syncBoardChanges(updatedBoard, isSharedBoard);
   };
 
+  const handleEditClick = (e, listIndex, taskIndex, task) => {
+    e.stopPropagation();
+    const taskElement = e.currentTarget.closest('.task');
+    const rect = taskElement.getBoundingClientRect();
+    
+    // Calculate position to center the modal relative to the task
+    const modalWidth = rect.width + 24; // Width of the modal (task width + 24px)
+    const modalPadding = 16; // Padding of the modal
+    const taskPreviewPadding = 16; // Padding of the task preview
+    const verticalOffset = 8; // Reduced from 9 to 8 to move modal 1px higher
+    
+    // Center horizontally by calculating the left position and subtract 2 pixels
+    const leftPosition = rect.left - (modalWidth - rect.width) / 2 - 2;
+    
+    setModalPosition({
+      x: leftPosition - modalPadding,
+      y: rect.top - modalPadding - taskPreviewPadding + verticalOffset
+    });
+    
+    setSelectedTask({ 
+      listIndex, 
+      taskIndex, 
+      task,
+      taskRect: {
+        top: rect.top,
+        left: rect.left,
+        width: rect.width,
+        height: rect.height
+      }
+    });
+    setEditingTitle(task.text); // Set the initial editing title to the task's current text
+  };
+
+  // Add effect to handle window resize
+  useEffect(() => {
+    const handleResize = () => {
+      if (selectedTask) {
+        const modalElement = document.querySelector('.task-modal');
+        if (modalElement) {
+          const rect = modalElement.getBoundingClientRect();
+          const modalWidth = 320;
+          const modalHeight = 400;
+          const padding = 20;
+
+          let x = modalPosition.x;
+          let y = modalPosition.y;
+
+          // Check right edge
+          if (x + modalWidth > window.innerWidth - padding) {
+            x = window.innerWidth - modalWidth - padding;
+          }
+
+          // Check bottom edge
+          if (y + modalHeight > window.innerHeight - padding) {
+            y = Math.max(padding, window.innerHeight - modalHeight - padding);
+          }
+
+          // Check top edge
+          if (y < padding) {
+            y = padding;
+          }
+
+          setModalPosition({ x, y });
+        }
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [selectedTask, modalPosition]);
+
   return (
     <div className="app-container" key={forceUpdate}>
       <div className="sidebar">
@@ -1205,7 +1277,6 @@ const TaskBoard = ({ user, onLogout }) => {
                       <li 
                         key={taskIndex} 
                         className={`task ${task.completed ? 'completed' : ''}`}
-                        onClick={() => setSelectedTask({ listIndex, taskIndex, task })}
                         draggable={!isSharedBoard || (isSharedBoard && currentBoard.collaborators.find(c => c.id === user.id)?.role !== 'observer')}
                         onDragStart={(e) => {
                           e.dataTransfer.setData('application/json', JSON.stringify({
@@ -1249,21 +1320,7 @@ const TaskBoard = ({ user, onLogout }) => {
                             />
                           ) : (
                             // Title Display Mode
-                            <>
-                              <span>{task.text}</span>
-                              {(!isSharedBoard || (isSharedBoard && currentBoard.collaborators.find(c => c.id === user.id)?.role !== 'observer')) && (
-                                <button
-                                  className="edit-title-btn"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setEditingTaskId(task.id);
-                                    setEditingTitle(task.text);
-                                  }}
-                                >
-                                  ✎
-                                </button>
-                              )}
-                            </>
+                            <span>{task.text}</span>
                           )}
                         </div>
 
@@ -1286,12 +1343,10 @@ const TaskBoard = ({ user, onLogout }) => {
                           </div>
                           {(!isSharedBoard || (isSharedBoard && currentBoard.collaborators.find(c => c.id === user.id)?.role !== 'observer')) && (
                             <button 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                removeTask(listIndex, taskIndex);
-                              }}
+                              className="edit-task-btn"
+                              onClick={(e) => handleEditClick(e, listIndex, taskIndex, task)}
                             >
-                              Usuń
+                              Edytuj
                             </button>
                           )}
                         </div>
@@ -1330,60 +1385,143 @@ const TaskBoard = ({ user, onLogout }) => {
         )}
 
         {selectedTask && (
-          <div className="modal-overlay" onClick={() => setSelectedTask(null)}>
-            <div className="task-modal" onClick={(e) => e.stopPropagation()}>
+          <div 
+            className="modal-overlay" 
+            onClick={() => setSelectedTask(null)}
+          >
+            <div 
+              className="task-modal" 
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                position: 'fixed',
+                top: modalPosition.y,
+                left: modalPosition.x,
+                width: selectedTask.taskRect.width + 24
+              }}
+            >
+              {/* Edited Task Preview */}
+              <div className="edited-task-preview">
+                <div 
+                  className="task" 
+                  style={{ 
+                    backgroundColor: selectedTask.task.color || '#ffffff',
+                    width: `${selectedTask.taskRect.width + 24}px`
+                  }}
+                >
+                  <div className="task-title">
+                    <input
+                      type="text"
+                      className="task-title-edit"
+                      value={editingTitle}
+                      onChange={(e) => setEditingTitle(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          updateTaskTitle(selectedTask.listIndex, selectedTask.taskIndex, editingTitle);
+                          setEditingTaskId(null);
+                        } else if (e.key === 'Escape') {
+                          setEditingTaskId(null);
+                        }
+                      }}
+                      onBlur={() => {
+                        if (editingTitle.trim()) {
+                          updateTaskTitle(selectedTask.listIndex, selectedTask.taskIndex, editingTitle);
+                        }
+                        setEditingTaskId(null);
+                      }}
+                      autoFocus
+                    />
+                  </div>
+                  <div className="task-content">
+                    <div className="task-left">
+                      <input
+                        type="checkbox"
+                        checked={selectedTask.task.completed}
+                        onChange={() => toggleTaskCompletion(selectedTask.listIndex, selectedTask.taskIndex)}
+                        disabled={isSharedBoard && currentBoard.collaborators.find(c => c.id === user.id)?.role === 'observer'}
+                        className="task-checkbox"
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                      {selectedTask.task.comments?.length > 0 && (
+                        <span className="comment-count">
+                          {selectedTask.task.comments.length} 💬
+                        </span>
+                      )}
+                    </div>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      {(!isSharedBoard || (isSharedBoard && currentBoard.collaborators.find(c => c.id === user.id)?.role !== 'observer')) && (
+                        <button 
+                          className="delete-task-btn"
+                          onClick={() => {
+                            removeTask(selectedTask.listIndex, selectedTask.taskIndex);
+                            setSelectedTask(null);
+                          }}
+                          style={{ width: '59px', backgroundColor: '#FF3333' }}
+                        >
+                          Usuń
+                        </button>
+                      )}
+                      <button 
+                        className="edit-task-btn"
+                        onClick={() => setSelectedTask(null)}
+                        style={{ width: '59px' }}
+                      >
+                        Stop
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               {/* Modal Header with Editable Title */}
               <div className="task-modal-header">
-                {editingTaskId === selectedTask.task.id ? (
-                  <input
-                    type="text"
-                    className="task-title-edit"
-                    value={editingTitle}
-                    onChange={(e) => setEditingTitle(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        updateTaskTitle(selectedTask.listIndex, selectedTask.taskIndex, editingTitle);
-                        setEditingTaskId(null);
-                      } else if (e.key === 'Escape') {
-                        setEditingTaskId(null);
-                      }
-                    }}
-                    onBlur={() => {
-                      if (editingTitle.trim()) {
-                        updateTaskTitle(selectedTask.listIndex, selectedTask.taskIndex, editingTitle);
-                      }
-                      setEditingTaskId(null);
-                    }}
-                    autoFocus
-                  />
-                ) : (
-                  <>
-                    <h3>{selectedTask.task.text}</h3>
-                    {(!isSharedBoard || (isSharedBoard && currentBoard.collaborators.find(c => c.id === user.id)?.role !== 'observer')) && (
-                      <button
-                        className="edit-title-btn"
-                        onClick={() => {
-                          setEditingTaskId(selectedTask.task.id);
-                          setEditingTitle(selectedTask.task.text);
-                        }}
-                      >
-                        ✎
-                      </button>
-                    )}
-                  </>
-                )}
-                <button className="close-btn" onClick={() => setSelectedTask(null)}>×</button>
               </div>
 
               {/* Color Picker Section */}
               {(!isSharedBoard || (isSharedBoard && currentBoard.collaborators.find(c => c.id === user.id)?.role !== 'observer')) && (
                 <div className="task-color-picker">
                   <label>Kolor zadania:</label>
-                  <input
-                    type="color"
-                    value={selectedTask.task.color || '#ffffff'}
-                    onChange={(e) => updateTaskColor(selectedTask.listIndex, selectedTask.taskIndex, e.target.value)}
-                  />
+                  <div className="color-options">
+                    <button 
+                      className="color-option" 
+                      style={{ backgroundColor: '#FF6B6B' }}
+                      onClick={() => updateTaskColor(selectedTask.listIndex, selectedTask.taskIndex, '#FF6B6B')}
+                    />
+                    <button 
+                      className="color-option" 
+                      style={{ backgroundColor: '#4ECDC4' }}
+                      onClick={() => updateTaskColor(selectedTask.listIndex, selectedTask.taskIndex, '#4ECDC4')}
+                    />
+                    <button 
+                      className="color-option" 
+                      style={{ backgroundColor: '#FFD93D' }}
+                      onClick={() => updateTaskColor(selectedTask.listIndex, selectedTask.taskIndex, '#FFD93D')}
+                    />
+                    <button 
+                      className="color-option" 
+                      style={{ backgroundColor: '#95E1D3' }}
+                      onClick={() => updateTaskColor(selectedTask.listIndex, selectedTask.taskIndex, '#95E1D3')}
+                    />
+                    <button 
+                      className="color-option" 
+                      style={{ backgroundColor: '#F8B195' }}
+                      onClick={() => updateTaskColor(selectedTask.listIndex, selectedTask.taskIndex, '#F8B195')}
+                    />
+                    <button 
+                      className="color-option" 
+                      style={{ backgroundColor: '#6C5CE7' }}
+                      onClick={() => updateTaskColor(selectedTask.listIndex, selectedTask.taskIndex, '#6C5CE7')}
+                    />
+                    <button 
+                      className="color-option" 
+                      style={{ backgroundColor: '#A8E6CF' }}
+                      onClick={() => updateTaskColor(selectedTask.listIndex, selectedTask.taskIndex, '#A8E6CF')}
+                    />
+                    <button 
+                      className="color-option" 
+                      style={{ backgroundColor: '#FF8B94' }}
+                      onClick={() => updateTaskColor(selectedTask.listIndex, selectedTask.taskIndex, '#FF8B94')}
+                    />
+                  </div>
                 </div>
               )}
 
