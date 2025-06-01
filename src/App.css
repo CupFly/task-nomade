@@ -90,7 +90,7 @@ body {
   margin: 0;
   overflow-y: auto;
   flex: 1;
-  max-height: calc(100vh - 200px);
+  max-height: calc(100vh - 250px);
 }
 
 .task {
@@ -622,13 +622,13 @@ body {
   background: #1E1E1E;
   padding: 16px;
   border-radius: 8px;
-  max-height: calc(100vh - 40px);
-  overflow-y: auto;
   position: fixed;
   color: #D1D1D1;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   border: 1px solid #333;
   z-index: 1002;
+  max-height: none;
+  overflow-y: visible;
 }
 
 .task-modal-header {
@@ -784,6 +784,26 @@ body {
   background: rgba(0, 0, 0, 0.5);
   backdrop-filter: blur(4px);
   z-index: 1000;
+  overflow-y: auto;
+}
+
+/* Custom scrollbar for modal overlay */
+.modal-overlay::-webkit-scrollbar {
+  width: 8px;
+}
+
+.modal-overlay::-webkit-scrollbar-track {
+  background: #1A1A1A;
+  border-radius: 4px;
+}
+
+.modal-overlay::-webkit-scrollbar-thumb {
+  background: #444;
+  border-radius: 4px;
+}
+
+.modal-overlay::-webkit-scrollbar-thumb:hover {
+  background: #555;
 }
 
 .close-btn {
