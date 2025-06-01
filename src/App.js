@@ -359,6 +359,7 @@ const TaskBoard = ({ user, onLogout }) => {
                         text: comment,
                         userId: user.id,
                         userEmail: user.email,
+                        username: user.username || user.email.split('@')[0],
                         createdAt: Date.now()
                       }]
                     }
@@ -381,6 +382,7 @@ const TaskBoard = ({ user, onLogout }) => {
             text: comment,
             userId: user.id,
             userEmail: user.email,
+            username: user.username || user.email.split('@')[0],
             createdAt: Date.now()
           }]
         }
@@ -1532,7 +1534,7 @@ const TaskBoard = ({ user, onLogout }) => {
                   {selectedTask.task.comments?.map((comment) => (
                     <div key={comment.id} className="comment">
                       <div className="comment-header">
-                        <span className="comment-author">{comment.userEmail}</span>
+                        <span className="comment-author">{comment.username || comment.userEmail}</span>
                         <span className="comment-date">{formatDate(comment.createdAt)}</span>
                         {(comment.userId === user.id || (!isSharedBoard || currentBoard.ownerId === user.id)) && (
                           <button

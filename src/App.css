@@ -613,15 +613,16 @@ body {
 
 .comment-count {
   font-size: 12px;
-  color: #888;
+  color: #000000;
   margin-left: 8px;
+  filter: brightness(0);
 }
 
 .task-modal {
   background: #1E1E1E;
   padding: 16px;
   border-radius: 8px;
-  max-height: 80vh;
+  max-height: calc(100vh - 40px);
   overflow-y: auto;
   position: fixed;
   color: #D1D1D1;
@@ -661,8 +662,27 @@ body {
 
 .comments-list {
   margin-bottom: 20px;
-  max-height: 400px;
+  max-height: 300px;
   overflow-y: auto;
+}
+
+/* Custom scrollbar for comments */
+.comments-list::-webkit-scrollbar {
+  width: 8px;
+}
+
+.comments-list::-webkit-scrollbar-track {
+  background: #1A1A1A;
+  border-radius: 4px;
+}
+
+.comments-list::-webkit-scrollbar-thumb {
+  background: #444;
+  border-radius: 4px;
+}
+
+.comments-list::-webkit-scrollbar-thumb:hover {
+  background: #555;
 }
 
 .comment {
@@ -671,13 +691,15 @@ body {
   border-radius: 8px;
   margin-bottom: 12px;
   border: 1px solid #333;
+  position: relative;
 }
 
 .comment-header {
   display: flex;
   align-items: center;
-  margin-bottom: 8px;
   gap: 12px;
+  margin-bottom: 8px;
+  position: relative;
 }
 
 .comment-author {
@@ -688,6 +710,23 @@ body {
 .comment-date {
   color: #888;
   font-size: 12px;
+}
+
+.remove-comment-btn {
+  position: absolute;
+  top: 0;
+  right: 0;
+  background: none;
+  border: none;
+  color: #888;
+  cursor: pointer;
+  padding: 4px;
+  font-size: 13px;
+  transition: color 0.2s;
+}
+
+.remove-comment-btn:hover {
+  color: #ff3333;
 }
 
 .comment-text {
@@ -733,22 +772,6 @@ body {
 
 .add-comment-btn:hover {
   background: #4500CC;
-  transform: translateY(-1px);
-}
-
-.remove-comment-btn {
-  background: #2A2A2A;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  padding: 6px 12px;
-  font-size: 13px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.remove-comment-btn:hover {
-  background: #333;
   transform: translateY(-1px);
 }
 
@@ -986,4 +1009,44 @@ body {
 
 .edited-task-preview .task-checkbox {
   display: none;
+}
+
+.edited-task-preview .comment-count {
+  display: none;
+}
+
+.collaborator-modal input[type="email"] {
+  width: 120px !important;
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid #444;
+  background: #2A2A2A;
+  color: white;
+  font-size: 14px;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.collaborator-modal input[type="email"]:focus {
+  border-color: #5A00FF;
+  box-shadow: 0 0 0 2px rgba(90, 0, 255, 0.2);
+}
+
+.profile-form input[type="text"],
+.profile-form input[type="email"] {
+  width: 120px !important;
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid #444;
+  background: #2A2A2A;
+  color: white;
+  font-size: 14px;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.profile-form input[type="text"]:focus,
+.profile-form input[type="email"]:focus {
+  border-color: #5A00FF;
+  box-shadow: 0 0 0 2px rgba(90, 0, 255, 0.2);
 }
