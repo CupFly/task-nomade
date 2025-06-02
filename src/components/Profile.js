@@ -314,18 +314,21 @@ const Profile = ({ user, onLogout }) => {
         <div className="profile-section">
           <h2>Informacje o koncie</h2>
           <div className="profile-info">
-            <div className="info-item">
+            <div className="info-item" onClick={() => setShowUsernameForm(!showUsernameForm)}>
               <label>Nazwa użytkownika:</label>
               <span>{user.username || 'Nie ustawiono'}</span>
               <button 
                 className="edit-button"
-                onClick={() => setShowUsernameForm(!showUsernameForm)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowUsernameForm(!showUsernameForm);
+                }}
               >
                 {showUsernameForm ? 'Anuluj' : 'Zmień'}
               </button>
             </div>
             {showUsernameForm && (
-              <div className="edit-form">
+              <div className={`edit-form ${!showUsernameForm ? 'hidden' : ''}`}>
                 <input
                   type="text"
                   placeholder="Nowa nazwa użytkownika"
@@ -371,18 +374,21 @@ const Profile = ({ user, onLogout }) => {
                 </div>
               </div>
             )}
-            <div className="info-item">
+            <div className="info-item" onClick={() => setShowEmailForm(!showEmailForm)}>
               <label>Email:</label>
               <span>{user.email}</span>
               <button 
                 className="edit-button"
-                onClick={() => setShowEmailForm(!showEmailForm)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowEmailForm(!showEmailForm);
+                }}
               >
                 {showEmailForm ? 'Anuluj' : 'Zmień'}
               </button>
             </div>
             {showEmailForm && (
-              <div className="edit-form">
+              <div className={`edit-form ${!showEmailForm ? 'hidden' : ''}`}>
                 <input
                   type="text"
                   placeholder="Nowy email"
@@ -425,18 +431,21 @@ const Profile = ({ user, onLogout }) => {
               <label>ID użytkownika:</label>
               <span>{user.id}</span>
             </div>
-            <div className="info-item">
+            <div className="info-item" onClick={() => setShowPasswordForm(!showPasswordForm)}>
               <label>Hasło:</label>
               <span>••••••••</span>
               <button 
                 className="edit-button"
-                onClick={() => setShowPasswordForm(!showPasswordForm)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowPasswordForm(!showPasswordForm);
+                }}
               >
                 {showPasswordForm ? 'Anuluj' : 'Zmień'}
               </button>
             </div>
             {showPasswordForm && (
-              <div className="edit-form">
+              <div className={`edit-form ${!showPasswordForm ? 'hidden' : ''}`}>
                 <div className="password-input-container">
                   <input
                     type={showPasswords.currentPassword ? "text" : "password"}

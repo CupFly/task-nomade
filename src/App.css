@@ -1,29 +1,29 @@
 /* Modern Color Scheme */
 :root {
-  --primary: #6C63FF;
-  --primary-dark: #5A52E0;
-  --secondary: #FF6B6B;
-  --background-dark: #13111C;
-  --background-light: #1E1B2C;
-  --surface: #282541;
+  --primary: #666666;
+  --primary-dark: #444444;
+  --secondary: #888888;
+  --background-dark: #1a1a1a;
+  --background-light: #333333;
+  --surface: #404040;
   --text-primary: #FFFFFF;
-  --text-secondary: #B4B0C5;
-  --border-color: #332F4D;
-  --success: #4CAF50;
-  --error: #FF4B4B;
-  --task-background: rgba(255, 107, 107, 0.15);
-  --task-border: rgba(255, 107, 107, 0.3);
-  --gradient-1: linear-gradient(135deg, #6C63FF 0%, #5A52E0 100%);
-  --gradient-2: linear-gradient(135deg, #FF6B6B 0%, #FF4B4B 100%);
-  --gradient-3: linear-gradient(135deg, #4CAF50 0%, #45A049 100%);
-  --gradient-4: linear-gradient(135deg, #332F4D 0%, #1E1B2C 100%);
-  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(108, 99, 255, 0.1);
-  --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.12), 0 2px 4px rgba(108, 99, 255, 0.15);
-  --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.15), 0 3px 6px rgba(108, 99, 255, 0.2);
-  --shadow-hover: 0 12px 24px rgba(0, 0, 0, 0.2), 0 4px 8px rgba(108, 99, 255, 0.25);
-  --glow-primary: 0 0 20px rgba(108, 99, 255, 0.4);
-  --glow-error: 0 0 20px rgba(255, 75, 75, 0.4);
-  --glow-success: 0 0 20px rgba(76, 175, 80, 0.4);
+  --text-secondary: #CCCCCC;
+  --border-color: #4a4a4a;
+  --success: #666666;
+  --error: #666666;
+  --task-background: #404040;
+  --task-border: #4a4a4a;
+  --gradient-1: linear-gradient(135deg, #666666 0%, #444444 100%);
+  --gradient-2: linear-gradient(135deg, #666666 0%, #444444 100%);
+  --gradient-3: linear-gradient(135deg, #666666 0%, #444444 100%);
+  --gradient-4: linear-gradient(135deg, #404040 0%, #1a1a1a 100%);
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(200, 200, 200, 0.1);
+  --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.12), 0 2px 4px rgba(200, 200, 200, 0.15);
+  --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.15), 0 3px 6px rgba(200, 200, 200, 0.2);
+  --shadow-hover: 0 12px 24px rgba(0, 0, 0, 0.2), 0 4px 8px rgba(200, 200, 200, 0.25);
+  --glow-primary: 0 0 20px rgba(102, 102, 102, 0.4);
+  --glow-error: 0 0 20px rgba(102, 102, 102, 0.4);
+  --glow-success: 0 0 20px rgba(102, 102, 102, 0.4);
 }
 
 body {
@@ -82,26 +82,23 @@ body {
   width: 320px;
   min-width: 320px;
   background: var(--background-light);
-  border-radius: 12px;
+  border-radius: 8px;
   box-shadow: var(--shadow-md);
   padding: 0;
   color: var(--text-primary);
   cursor: move;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
   display: flex;
   flex-direction: column;
   max-height: calc(100vh - 100px);
   min-height: 100px;
   flex-shrink: 0;
   border: 1px solid var(--border-color);
-  backdrop-filter: blur(8px);
-  transform-style: preserve-3d;
-  perspective: 1000px;
 }
 
 .list-table:hover {
-  transform: translateY(-4px) scale(1.01) rotateY(1deg);
-  box-shadow: var(--shadow-hover);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
 }
 
 .list-header {
@@ -162,22 +159,18 @@ body {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
   cursor: pointer;
   user-select: none;
   position: relative;
   z-index: 1;
   border: 1px solid var(--task-border);
-  backdrop-filter: blur(8px);
-  transform-style: preserve-3d;
-  perspective: 1000px;
 }
 
 .task:hover {
-  transform: translateY(-4px) scale(1.02) rotateX(2deg);
-  box-shadow: var(--shadow-hover);
-  border-color: var(--secondary);
-  background: rgba(255, 107, 107, 0.2);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--primary);
 }
 
 .task.completed {
@@ -371,7 +364,7 @@ body {
 .add-list-btn {
   margin-top: 12px;
   padding: 12px;
-  background: #5A00FF;
+  background: #2A2A2A;
   color: white;
   border: none;
   border-radius: 8px;
@@ -379,10 +372,13 @@ body {
   font-size: 14px;
   font-weight: 500;
   transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .add-list-btn:hover {
-  background: #4500CC;
+  background: #333;
   transform: translateY(-1px);
 }
 
@@ -434,18 +430,16 @@ body {
   align-items: center;
   padding: 20px;
   background: var(--surface);
-  border-radius: 12px;
+  border-radius: 8px;
   margin-bottom: 20px;
   box-shadow: var(--shadow-md);
   border: 1px solid var(--border-color);
-  transition: all 0.3s ease;
-  position: relative;
-  overflow: hidden;
+  transition: all 0.2s ease;
 }
 
 .header:hover {
   transform: translateY(-2px);
-  box-shadow: var(--shadow-hover);
+  box-shadow: var(--shadow-md);
 }
 
 .header::before {
@@ -541,35 +535,22 @@ body {
   justify-content: space-between;
   align-items: center;
   gap: 12px;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
   min-width: 0;
   user-select: none;
   position: relative;
   border: 1px solid var(--border-color);
-  overflow: hidden;
 }
 
-.board-tab::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(135deg, transparent 0%, rgba(255, 255, 255, 0.1) 50%, transparent 100%);
-  transform: translateX(-100%) skewX(-15deg);
-  transition: transform 0.5s ease;
-}
-
-.board-tab:hover::before {
-  transform: translateX(100%) skewX(-15deg);
+.board-tab:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
 }
 
 .board-tab.active {
   background: var(--primary);
   color: white;
   border-color: var(--primary-dark);
-  box-shadow: var(--glow-primary);
 }
 
 .board-tab[draggable="true"] {
@@ -805,23 +786,10 @@ body {
   position: fixed;
   color: var(--text-primary);
   box-shadow: var(--shadow-lg);
-  backdrop-filter: blur(12px);
   border: 1px solid var(--border-color);
   z-index: 1002;
   max-height: none;
   overflow-y: visible;
-  animation: modalEnter 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-@keyframes modalEnter {
-  from {
-    opacity: 0;
-    transform: scale(0.95) translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1) translateY(0);
-  }
 }
 
 .task-modal-header {
@@ -974,8 +942,7 @@ body {
   left: 0;
   right: 0;
   bottom: 0;
-  backdrop-filter: blur(12px);
-  background: rgba(19, 17, 28, 0.8);
+  background: rgba(0, 0, 0, 0.5);
   z-index: 1000;
   overflow-y: auto;
 }
