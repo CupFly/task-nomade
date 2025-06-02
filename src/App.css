@@ -384,19 +384,45 @@ body {
 }
 
 .remove-list-btn {
-  background: #2A2A2A;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  padding: 6px 12px;
-  cursor: pointer;
-  font-size: 13px;
-  transition: all 0.2s ease;
+  width: 28px !important;
+  height: 28px !important;
+  border-radius: 50% !important;
+  border: none !important;
+  background: rgba(0, 0, 0, 0.4) !important;
+  color: transparent !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  transform: scale(1) !important;
+  box-shadow: none !important;
+  outline: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  position: relative !important;
+  z-index: 2 !important;
+}
+
+.remove-list-btn::after {
+  content: '🗑' !important;
+  color: #FF3333 !important;
+  font-size: 16px !important;
+  position: absolute !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
 }
 
 .remove-list-btn:hover {
-  background: #333;
-  transform: translateY(-1px);
+  background: rgba(0, 0, 0, 0.7) !important;
+  transform: scale(1.2) !important;
+}
+
+.remove-list-btn:hover::before {
+  display: none !important;
+  opacity: 0 !important;
+  transform: none !important;
 }
 
 .header {

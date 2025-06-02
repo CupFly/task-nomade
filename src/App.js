@@ -1371,8 +1371,7 @@ const TaskBoard = ({ user, onLogout }) => {
                   <h3>
                     {list.title}
                     {(!isSharedBoard || (isSharedBoard && currentBoard.collaborators.find(c => c.id === user.id)?.role !== 'observer')) && (
-                      <button onClick={() => removeList(listIndex)} className="remove-list-btn">
-                        Usuń listę
+                      <button onClick={() => removeList(listIndex)} className="remove-list-btn" title="Usuń listę">
                       </button>
                     )}
                   </h3>
