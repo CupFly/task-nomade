@@ -223,6 +223,10 @@ body {
   box-shadow: none;
 }
 
+.task-title:hover .edit-title-btn {
+  opacity: 1;
+}
+
 .edit-title-btn {
   background: transparent;
   border: none;
@@ -318,7 +322,7 @@ body {
   color: #888;
 }
 
-.task button {
+.task button:not(.edit-task-btn) {
   background: #2A2A2A;
   color: white;
   border: none;
@@ -333,7 +337,7 @@ body {
   outline: 2px solid black;
 }
 
-.task button:hover {
+.task button:not(.edit-task-btn):hover {
   background: #333;
   transform: translateY(-1px);
   outline: 3px solid black;
@@ -1078,18 +1082,57 @@ body {
   border-color: var(--primary);
 }
 
+.task-buttons {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.task:hover .task-buttons {
+  opacity: 1;
+}
+
 .edit-task-btn {
-  background-color: var(--primary);
+  width: 28px !important;
+  height: 28px !important;
+  border-radius: 50% !important;
+  border: none !important;
+  background: rgba(0, 0, 0, 0.4) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  outline: none !important;
+  position: relative !important;
+  color: transparent !important;
+  transition: all 0.2s ease !important;
+  transform: scale(1) !important;
+}
+
+.edit-task-btn::after {
+  content: '✎';
   color: white;
-  border: none;
-  padding: 4px 8px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 12px;
+  font-size: 14px;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
 }
 
 .edit-task-btn:hover {
-  background-color: var(--primary-dark);
+  background: rgba(0, 0, 0, 0.7) !important;
+  transform: scale(1.2) !important;
+  box-shadow: none !important;
+}
+
+.edit-task-btn:hover::before {
+  display: none !important;
+  opacity: 0 !important;
+  transform: none !important;
 }
 
 .modal-header-actions {
