@@ -1368,13 +1368,31 @@ const TaskBoard = ({ user, onLogout }) => {
                     }
                   }}
                 >
-                  <h3>
-                    {list.title}
+                  <div className="list-header">
+                    <input
+                      type="text"
+                      className="list-title-input"
+                      value={list.title}
+                      onChange={(e) => {
+                        const currentBoard = isSharedBoard ? sharedBoards[currentBoardIndex - boards.length] : boards[currentBoardIndex];
+                        const updatedBoard = {
+                          ...currentBoard,
+                          lists: currentBoard.lists.map((l, idx) =>
+                            idx === listIndex
+                              ? { ...l, title: e.target.value }
+                              : l
+                          )
+                        };
+                        syncBoardChanges(updatedBoard, isSharedBoard);
+                      }}
+                      maxLength="20"
+                      disabled={isSharedBoard && currentBoard.collaborators.find(c => c.id === user.id)?.role === 'observer'}
+                    />
                     {(!isSharedBoard || (isSharedBoard && currentBoard.collaborators.find(c => c.id === user.id)?.role !== 'observer')) && (
                       <button onClick={() => removeList(listIndex)} className="remove-list-btn" title="Usuń listę">
                       </button>
                     )}
-                  </h3>
+                  </div>
                   <ul className="task-list">
                     {list.tasks.map((task, taskIndex) => (
                       <li 

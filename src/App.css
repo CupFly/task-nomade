@@ -104,7 +104,7 @@ body {
   box-shadow: var(--shadow-hover);
 }
 
-.list-table h3 {
+.list-header {
   text-align: left;
   padding: 16px;
   font-size: 18px;
@@ -122,22 +122,25 @@ body {
   overflow: hidden;
 }
 
-.list-table h3::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-  transform: translateX(-100%);
-  animation: shimmer 3s infinite;
+.list-title-input {
+  background: transparent;
+  border: none;
+  color: white;
+  font-size: 18px;
+  font-weight: 600;
+  padding: 0;
+  margin: 0;
+  width: calc(100% - 40px);
+  outline: none;
 }
 
-@keyframes shimmer {
-  100% {
-    transform: translateX(100%);
-  }
+.list-title-input:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.list-title-input::placeholder {
+  color: rgba(255, 255, 255, 0.7);
 }
 
 .task-list {
