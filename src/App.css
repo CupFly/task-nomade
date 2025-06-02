@@ -1103,30 +1103,25 @@ body {
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  cursor: pointer !important;
-  padding: 0 !important;
-  margin: 0 !important;
-  outline: none !important;
-  position: relative !important;
   color: transparent !important;
+  position: relative !important;
   transition: all 0.2s ease !important;
   transform: scale(1) !important;
 }
 
 .edit-task-btn::after {
-  content: '✎';
-  color: white;
-  font-size: 14px;
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+  content: '✎' !important;
+  color: white !important;
+  font-size: 16px !important;
+  position: absolute !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
 }
 
 .edit-task-btn:hover {
   background: rgba(0, 0, 0, 0.7) !important;
   transform: scale(1.2) !important;
-  box-shadow: none !important;
 }
 
 .edit-task-btn:hover::before {
@@ -1135,26 +1130,67 @@ body {
   transform: none !important;
 }
 
-.modal-header-actions {
-  display: flex;
-  align-items: center;
-  gap: 12px;
+/* Style for the close button in the editing window */
+.edit-task-btn[style*="width: 59px"]::after {
+  content: '✕' !important;
+}
+
+.edit-task-btn[style*="width: 59px"] {
+  width: 28px !important;
+  height: 28px !important;
+  border-radius: 50% !important;
 }
 
 .delete-task-btn {
-  background: var(--error);
-  color: white;
-  border: none;
-  border-radius: 6px;
-  padding: 6px 12px;
-  font-size: 13px;
-  cursor: pointer;
-  transition: all 0.2s ease;
+  width: 28px !important;
+  height: 28px !important;
+  border-radius: 50% !important;
+  border: none !important;
+  background: rgba(0, 0, 0, 0.4) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  color: transparent !important;
+  position: relative !important;
+  transition: all 0.2s ease !important;
+  transform: scale(1) !important;
+  outline: none !important;
+}
+
+.delete-task-btn::after {
+  content: '🗑' !important;
+  color: #FF3333 !important;
+  font-size: 16px !important;
+  position: absolute !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
 }
 
 .delete-task-btn:hover {
-  background: var(--error);
-  transform: translateY(-1px);
+  background: rgba(0, 0, 0, 0.7) !important;
+  transform: scale(1.2) !important;
+  box-shadow: none !important;
+}
+
+.delete-task-btn:hover::before {
+  display: none !important;
+  opacity: 0 !important;
+  transform: none !important;
+}
+
+/* Override all inline styles for the delete button */
+.delete-task-btn[style] {
+  width: 28px !important;
+  height: 28px !important;
+  border-radius: 50% !important;
+  background: rgba(0, 0, 0, 0.4) !important;
+  border: none !important;
+  outline: none !important;
+}
+
+.delete-task-btn[style]:hover {
+  background: rgba(0, 0, 0, 0.7) !important;
 }
 
 .edited-task-preview {
@@ -1370,26 +1406,9 @@ button {
 }
 
 button::before {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 120%;
-  height: 120%;
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.2) 0%, transparent 70%);
-  transform: translate(-50%, -50%) scale(0);
-  opacity: 0;
-  transition: transform 0.5s ease, opacity 0.3s ease;
-}
-
-button:hover::before {
-  transform: translate(-50%, -50%) scale(1);
-  opacity: 1;
-}
-
-button:active::before {
-  transform: translate(-50%, -50%) scale(0.9);
-  opacity: 0.5;
+  display: none !important;
+  opacity: 0 !important;
+  transform: none !important;
 }
 
 /* Enhanced task styles */
