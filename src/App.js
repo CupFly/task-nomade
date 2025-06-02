@@ -1644,11 +1644,6 @@ const TaskBoard = ({ user, onLogout }) => {
                           style={{ backgroundColor: '#A8E6CF' }}
                           onClick={() => updateTaskColor(selectedTask.listIndex, selectedTask.taskIndex, '#A8E6CF')}
                         />
-                        <button 
-                          className="color-option" 
-                          style={{ backgroundColor: '#FF8B94' }}
-                          onClick={() => updateTaskColor(selectedTask.listIndex, selectedTask.taskIndex, '#FF8B94')}
-                        />
                       </div>
                     </div>
                   )}
