@@ -342,6 +342,12 @@
   color: var(--text-primary);
   font-size: 14px;
   transition: all 0.3s ease;
+  -webkit-spellcheck: false;
+  spellcheck: false;
+  -webkit-text-security: none;
+  text-security: none;
+  -webkit-appearance: none;
+  appearance: none;
 }
 
 .edit-form input[type="text"]:focus,

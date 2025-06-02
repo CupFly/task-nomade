@@ -212,6 +212,8 @@ body {
   word-break: break-word;
   font-family: inherit;
   max-width: 30ch;
+  -webkit-spellcheck: false;
+  spellcheck: false;
 }
 
 .task-title-edit:focus {
@@ -764,19 +766,23 @@ body {
   font-size: 12px;
   color: #FFFFFF;
   margin-left: 8px;
-  background: none;
-  border: none;
+  background: #000000 !important;
+  border: none !important;
   padding: 4px 8px;
   cursor: pointer;
-  border-radius: 4px;
+  border-radius: 12px !important;
   transition: all 0.2s ease;
-  mix-blend-mode: normal;
+  outline: none !important;
+  box-shadow: none !important;
+  opacity: 0.5;
 }
 
 .comment-count-btn:hover {
   transform: translateY(-1px);
+  outline: none !important;
+  box-shadow: none !important;
   opacity: 0.8;
-  background: rgba(255, 255, 255, 0.1);
+  border-radius: 12px !important;
 }
 
 .task-modal {

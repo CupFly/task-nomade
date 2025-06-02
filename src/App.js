@@ -1440,6 +1440,7 @@ const TaskBoard = ({ user, onLogout }) => {
                               autoFocus
                               maxLength={60}
                               rows={1}
+                              spellCheck="false"
                               style={{ 
                                 resize: 'none',
                                 overflow: 'hidden',
@@ -1578,6 +1579,7 @@ const TaskBoard = ({ user, onLogout }) => {
                           autoFocus
                           maxLength={60}
                           rows={1}
+                          spellCheck="false"
                           style={{ 
                             resize: 'none',
                             overflow: 'hidden',

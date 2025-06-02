@@ -336,6 +336,7 @@ const Profile = ({ user, onLogout }) => {
                   onChange={(e) => setNewUsername(e.target.value)}
                   minLength={3}
                   maxLength={10}
+                  spellCheck="false"
                 />
                 <div className="password-input-container">
                   <input
@@ -394,6 +395,7 @@ const Profile = ({ user, onLogout }) => {
                   placeholder="Nowy email"
                   value={newEmail}
                   onChange={(e) => setNewEmail(e.target.value)}
+                  spellCheck="false"
                 />
                 <div className="password-input-container">
                   <input
