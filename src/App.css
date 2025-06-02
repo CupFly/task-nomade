@@ -603,20 +603,59 @@ body {
   border-radius: 2px;
 }
 
+.board-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.board-tab:hover .board-actions {
+  opacity: 1;
+}
+
 .remove-board-btn {
-  background: none;
-  border: none;
-  color: white;
-  font-size: 18px;
-  line-height: 1;
-  padding: 0 4px;
-  cursor: pointer;
-  opacity: 0.8;
-  transition: opacity 0.2s;
+  width: 28px !important;
+  height: 28px !important;
+  border-radius: 50% !important;
+  border: none !important;
+  background: rgba(0, 0, 0, 0.4) !important;
+  color: transparent !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  transform: scale(1) !important;
+  box-shadow: none !important;
+  outline: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  position: relative !important;
+  z-index: 2 !important;
+}
+
+.remove-board-btn::after {
+  content: '🗑' !important;
+  color: #FF3333 !important;
+  font-size: 16px !important;
+  position: absolute !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
 }
 
 .remove-board-btn:hover {
-  opacity: 1;
+  background: rgba(0, 0, 0, 0.7) !important;
+  transform: scale(1.2) !important;
+}
+
+.remove-board-btn:hover::before {
+  display: none !important;
+  opacity: 0 !important;
+  transform: none !important;
 }
 
 .new-board-form {
@@ -719,13 +758,6 @@ body {
 .leave-board-btn:hover {
   background-color: #333;
   transform: translateY(-1px);
-}
-
-.board-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-shrink: 0;
 }
 
 .list-table[draggable="true"]:hover {
