@@ -1084,12 +1084,13 @@ const TaskBoard = ({ user, onLogout }) => {
           <div className="header-content">
             <div 
               className="profile-avatar small"
-              style={user.profilePicture ? {
-                backgroundImage: `url(${user.profilePicture})`,
+              style={{
+                backgroundImage: user.profilePicture ? `url(${user.profilePicture})` : 'none',
                 backgroundSize: 'cover',
                 backgroundPosition: 'center',
-                fontSize: 0
-              } : {}}
+                fontSize: 0,
+                pointerEvents: 'none'
+              }}
             >
               {!user.profilePicture && (user.username ? user.username[0].toUpperCase() : user.email[0].toUpperCase())}
             </div>
@@ -1579,7 +1580,7 @@ const TaskBoard = ({ user, onLogout }) => {
                             onClick={(e) => e.stopPropagation()}
                           />
                         </div>
-                        <div style={{ display: 'flex', gap: '8px' }}>
+                        <div style={{ display: 'flex', gap: '8px', marginTop: '-8px' }}>
                           {(!isSharedBoard || (isSharedBoard && currentBoard.collaborators.find(c => c.id === user.id)?.role !== 'observer')) && (
                             <button 
                               className="delete-task-btn"
@@ -1658,7 +1659,7 @@ const TaskBoard = ({ user, onLogout }) => {
                   {/* Comments Section */}
                   <div className="comments-section">
                     <div className="comments-header">
-                      <h4>Komentarze: {selectedTask.task.text}</h4>
+                      <h4>Komentarze</h4>
                       <button 
                         className="close-comments-btn"
                         onClick={() => setSelectedTask(null)}

@@ -169,27 +169,14 @@
   font-weight: bold;
   position: relative;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   overflow: hidden;
   box-shadow: var(--shadow-md);
-  border: 3px solid transparent;
-  background-clip: padding-box;
-}
-
-.profile-avatar::before {
-  content: '';
-  position: absolute;
-  top: -3px;
-  left: -3px;
-  right: -3px;
-  bottom: -3px;
-  background: var(--gradient-1);
-  border-radius: 50%;
-  z-index: -1;
+  transition: all 0.3s ease;
 }
 
 .profile-avatar:hover {
-  transform: scale(1.05) rotate(5deg);
+  transform: scale(1.05);
+  transform: rotate(5deg);
   box-shadow: var(--shadow-lg), var(--glow-primary);
 }
 
@@ -205,7 +192,7 @@
   align-items: center;
   justify-content: center;
   opacity: 0;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: opacity 0.3s ease;
 }
 
 .profile-avatar:hover .profile-avatar-overlay {
@@ -218,11 +205,13 @@
   text-align: center;
   padding: 8px;
   transform: translateY(10px);
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  opacity: 0;
+  transition: all 0.3s ease;
 }
 
 .profile-avatar:hover .profile-avatar-overlay span {
   transform: translateY(0);
+  opacity: 1;
 }
 
 .profile-section {
