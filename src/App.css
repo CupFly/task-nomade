@@ -82,7 +82,7 @@ body {
   width: 320px;
   min-width: 320px;
   background: var(--background-light);
-  border-radius: 8px;
+  border-radius: 12px;
   box-shadow: var(--shadow-md);
   padding: 0;
   color: var(--text-primary);
@@ -341,7 +341,24 @@ body {
   outline: 3px solid black;
 }
 
-.task-input, .list-input {
+.task-input {
+  color: white;
+  background: #2A2A2A;
+  font-size: 14px;
+  outline: none;
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: 0 0 6px 6px;
+  border: 1px solid #444;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin-top: 8px;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+  height: 36px;
+  box-sizing: border-box;
+}
+
+.list-input {
   color: white;
   background: #2A2A2A;
   font-size: 14px;
