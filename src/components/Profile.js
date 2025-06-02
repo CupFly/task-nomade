@@ -274,6 +274,9 @@ const Profile = ({ user, onLogout }) => {
         // Update current user
         const updatedUser = { ...user, profilePicture: base64Image };
         localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+        
+        // Refresh the page to update all instances of the profile picture
+        window.location.reload();
       }
     };
     reader.readAsDataURL(file);
