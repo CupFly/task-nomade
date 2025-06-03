@@ -24,6 +24,9 @@ const TaskBoard = ({ user, onLogout }) => {
   const [addingTaskToList, setAddingTaskToList] = useState(null);
   const [newTaskText, setNewTaskText] = useState('');
   const taskInputRef = useRef(null);
+  const [contextMenu, setContextMenu] = useState({ listIndex: null, visible: false });
+  const [copyListModal, setCopyListModal] = useState({ visible: false, listIndex: null });
+  const [newListName, setNewListName] = useState('');
 
   const autoResizeTextarea = (element) => {
     if (element) {
@@ -1110,6 +1113,55 @@ const TaskBoard = ({ user, onLogout }) => {
     };
   }, []);
 
+  // Add this function to handle menu visibility
+  const handleContextMenu = (listIndex, e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setContextMenu({
+      listIndex,
+      visible: true
+    });
+  };
+
+  // Add this effect to handle clicking outside the menu
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (!event.target.closest('.list-menu-btn')) {
+        setContextMenu({ listIndex: null, visible: false });
+      }
+    };
+
+    document.addEventListener('click', handleClickOutside);
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+    };
+  }, []);
+
+  const copyList = (listIndex, newName) => {
+    const currentBoard = isSharedBoard ? sharedBoards[currentBoardIndex - boards.length] : boards[currentBoardIndex];
+    const listToCopy = currentBoard.lists[listIndex];
+    
+    const copiedList = {
+      ...listToCopy,
+      title: newName,
+      tasks: listToCopy.tasks.map(task => ({
+        ...task,
+        id: Date.now().toString() + Math.random().toString(36).substr(2, 9)
+      }))
+    };
+
+    const updatedBoard = {
+      ...currentBoard,
+      lists: [
+        ...currentBoard.lists.slice(0, listIndex + 1),
+        copiedList,
+        ...currentBoard.lists.slice(listIndex + 1)
+      ]
+    };
+
+    syncBoardChanges(updatedBoard, isSharedBoard);
+  };
+
   return (
     <div className="app-container" key={forceUpdate}>
       <div className="sidebar">
@@ -1425,8 +1477,40 @@ const TaskBoard = ({ user, onLogout }) => {
                       disabled={isSharedBoard && currentBoard.collaborators.find(c => c.id === user.id)?.role === 'observer'}
                     />
                     {(!isSharedBoard || (isSharedBoard && currentBoard.collaborators.find(c => c.id === user.id)?.role !== 'observer')) && (
-                      <button onClick={() => removeList(listIndex)} className="remove-list-btn" title="Usuń listę">
-                      </button>
+                      <div style={{ position: 'relative' }}>
+                        <button 
+                          className="list-menu-btn"
+                          onClick={(e) => handleContextMenu(listIndex, e)}
+                        >
+                          •••
+                        </button>
+                        {contextMenu.visible && contextMenu.listIndex === listIndex && (
+                          <div className="list-context-menu">
+                            <button 
+                              className="list-context-menu-item"
+                              onClick={() => {
+                                const currentBoard = isSharedBoard ? sharedBoards[currentBoardIndex - boards.length] : boards[currentBoardIndex];
+                                setNewListName(currentBoard.lists[listIndex].title);
+                                setCopyListModal({ visible: true, listIndex });
+                                setContextMenu({ listIndex: null, visible: false });
+                              }}
+                            >
+                              <span className="icon">⧉</span>
+                              Kopiuj
+                            </button>
+                            <button 
+                              className="list-context-menu-item delete"
+                              onClick={() => {
+                                removeList(listIndex);
+                                setContextMenu({ listIndex: null, visible: false });
+                              }}
+                            >
+                              <span className="icon">×</span>
+                              Usuń
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     )}
                   </div>
                   <ul className="task-list">
@@ -1775,6 +1859,56 @@ const TaskBoard = ({ user, onLogout }) => {
           onRemoveCollaborator={handleRemoveCollaborator}
           currentUser={user}
         />
+      )}
+
+      {copyListModal.visible && (
+        <>
+          <div className="copy-list-modal-overlay" onClick={() => setCopyListModal({ visible: false, listIndex: null })} />
+          <div className="copy-list-modal">
+            <h3>Nazwa nowej listy</h3>
+            <input
+              type="text"
+              value={newListName}
+              onChange={(e) => setNewListName(e.target.value)}
+              placeholder="Wprowadź nazwę listy"
+              maxLength="20"
+              autoFocus
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && newListName.trim()) {
+                  copyList(copyListModal.listIndex, newListName.trim());
+                  setCopyListModal({ visible: false, listIndex: null });
+                  setNewListName('');
+                } else if (e.key === 'Escape') {
+                  setCopyListModal({ visible: false, listIndex: null });
+                  setNewListName('');
+                }
+              }}
+            />
+            <div className="copy-list-modal-buttons">
+              <button 
+                className="cancel"
+                onClick={() => {
+                  setCopyListModal({ visible: false, listIndex: null });
+                  setNewListName('');
+                }}
+              >
+                Anuluj
+              </button>
+              <button
+                className="confirm"
+                onClick={() => {
+                  if (newListName.trim()) {
+                    copyList(copyListModal.listIndex, newListName.trim());
+                    setCopyListModal({ visible: false, listIndex: null });
+                    setNewListName('');
+                  }
+                }}
+              >
+                Kopiuj
+              </button>
+            </div>
+          </div>
+        </>
       )}
     </div>
   );
