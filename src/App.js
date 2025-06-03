@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { BrowserRouter as Router, Routes, Route, useNavigate } from "react-router-dom";
 import "./App.css";
 import Auth from "./components/Auth";
@@ -21,6 +21,9 @@ const TaskBoard = ({ user, onLogout }) => {
   const [selectedTask, setSelectedTask] = useState(null);
   const [commentInput, setCommentInput] = useState('');
   const [isCommentView, setIsCommentView] = useState(false);
+  const [addingTaskToList, setAddingTaskToList] = useState(null);
+  const [newTaskText, setNewTaskText] = useState('');
+  const taskInputRef = useRef(null);
 
   const autoResizeTextarea = (element) => {
     if (element) {
@@ -1074,6 +1077,39 @@ const TaskBoard = ({ user, onLogout }) => {
     return () => window.removeEventListener('resize', handleResize);
   }, [selectedTask, modalPosition]);
 
+  const handleAddTaskClick = (listIndex) => {
+    setAddingTaskToList(listIndex);
+    setNewTaskText('');
+  };
+
+  const handleAddTaskSubmit = (listIndex) => {
+    if (newTaskText.trim()) {
+      addTask(listIndex, newTaskText);
+    }
+    setAddingTaskToList(null);
+    setNewTaskText('');
+  };
+
+  const handleAddTaskCancel = () => {
+    setAddingTaskToList(null);
+    setNewTaskText('');
+  };
+
+  // Add click outside listener
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (taskInputRef.current && !taskInputRef.current.contains(event.target)) {
+        setAddingTaskToList(null);
+        setNewTaskText('');
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
   return (
     <div className="app-container" key={forceUpdate}>
       <div className="sidebar">
@@ -1410,9 +1446,22 @@ const TaskBoard = ({ user, onLogout }) => {
                           cleanupDragStates();
                         }}
                         style={{ backgroundColor: task.color || '#ffffff' }}
+                        onClick={(e) => {
+                          if (!e.target.classList.contains('task-checkbox') && !e.target.classList.contains('edit-task-btn')) {
+                            handleCommentsClick(e, listIndex, taskIndex, task);
+                          }
+                        }}
                       >
                         {/* Task Title Section */}
                         <div className="task-title">
+                          <input
+                            type="checkbox"
+                            checked={task.completed}
+                            onChange={() => toggleTaskCompletion(listIndex, taskIndex)}
+                            disabled={isSharedBoard && currentBoard.collaborators.find(c => c.id === user.id)?.role === 'observer'}
+                            className="task-checkbox"
+                            onClick={(e) => e.stopPropagation()}
+                          />
                           {editingTaskId === task.id ? (
                             // Title Edit Mode
                             <textarea
@@ -1468,22 +1517,6 @@ const TaskBoard = ({ user, onLogout }) => {
 
                         {/* Task Controls Section */}
                         <div className="task-content">
-                          <div className="task-left">
-                            <input
-                              type="checkbox"
-                              checked={task.completed}
-                              onChange={() => toggleTaskCompletion(listIndex, taskIndex)}
-                              disabled={isSharedBoard && currentBoard.collaborators.find(c => c.id === user.id)?.role === 'observer'}
-                              className="task-checkbox"
-                              onClick={(e) => e.stopPropagation()}
-                            />
-                            <button
-                              className="comment-count-btn"
-                              onClick={(e) => handleCommentsClick(e, listIndex, taskIndex, task)}
-                            >
-                              {task.comments?.length || 0} 💬
-                            </button>
-                          </div>
                           {(!isSharedBoard || (isSharedBoard && currentBoard.collaborators.find(c => c.id === user.id)?.role !== 'observer')) && (
                             <div className="task-buttons">
                               <button 
@@ -1497,20 +1530,35 @@ const TaskBoard = ({ user, onLogout }) => {
                         </div>
                       </li>
                     ))}
+                    {addingTaskToList === listIndex ? (
+                      <div className="task-input-container" ref={taskInputRef}>
+                        <input
+                          className="task-input"
+                          placeholder="Nowe zadanie"
+                          value={newTaskText}
+                          onChange={(e) => setNewTaskText(e.target.value)}
+                          maxLength={31}
+                          autoFocus
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              handleAddTaskSubmit(listIndex);
+                            } else if (e.key === "Escape") {
+                              handleAddTaskCancel();
+                            }
+                          }}
+                        />
+                      </div>
+                    ) : (
+                      (!isSharedBoard || (isSharedBoard && currentBoard.collaborators.find(c => c.id === user.id)?.role !== 'observer')) && (
+                        <button
+                          className="add-task-btn"
+                          onClick={() => handleAddTaskClick(listIndex)}
+                        >
+                          <span>+</span> Dodaj zadanie
+                        </button>
+                      )
+                    )}
                   </ul>
-                  {(!isSharedBoard || (isSharedBoard && currentBoard.collaborators.find(c => c.id === user.id)?.role !== 'observer')) && (
-                    <input
-                      className="task-input"
-                      placeholder="Nowe zadanie"
-                      maxLength={31}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          addTask(listIndex, e.target.value);
-                          e.target.value = '';
-                        }
-                      }}
-                    />
-                  )}
                 </div>
               ))}
             {(!isSharedBoard || (isSharedBoard && currentBoard.collaborators.find(c => c.id === user.id)?.role !== 'observer')) && (
@@ -1553,10 +1601,18 @@ const TaskBoard = ({ user, onLogout }) => {
                       className="task" 
                       style={{ 
                         backgroundColor: selectedTask.task.color || '#ffffff',
-                        width: `${selectedTask.taskRect.width + 24}px`
+                        width: selectedTask.taskRect.width
                       }}
                     >
                       <div className="task-title">
+                        <input
+                          type="checkbox"
+                          checked={selectedTask.task.completed}
+                          onChange={() => toggleTaskCompletion(selectedTask.listIndex, selectedTask.taskIndex)}
+                          disabled={isSharedBoard && currentBoard.collaborators.find(c => c.id === user.id)?.role === 'observer'}
+                          className="task-checkbox"
+                          onClick={(e) => e.stopPropagation()}
+                        />
                         <textarea
                           className="task-title-edit"
                           value={editingTitle}
@@ -1565,16 +1621,14 @@ const TaskBoard = ({ user, onLogout }) => {
                             if (e.key === 'Enter' && !e.shiftKey) {
                               e.preventDefault();
                               updateTaskTitle(selectedTask.listIndex, selectedTask.taskIndex, editingTitle);
-                              setEditingTaskId(null);
                             } else if (e.key === 'Escape') {
-                              setEditingTaskId(null);
+                              setSelectedTask(null);
                             }
                           }}
                           onBlur={() => {
                             if (editingTitle.trim()) {
                               updateTaskTitle(selectedTask.listIndex, selectedTask.taskIndex, editingTitle);
                             }
-                            setEditingTaskId(null);
                           }}
                           autoFocus
                           maxLength={60}
@@ -1589,17 +1643,7 @@ const TaskBoard = ({ user, onLogout }) => {
                         />
                       </div>
                       <div className="task-content">
-                        <div className="task-left">
-                          <input
-                            type="checkbox"
-                            checked={selectedTask.task.completed}
-                            onChange={() => toggleTaskCompletion(selectedTask.listIndex, selectedTask.taskIndex)}
-                            disabled={isSharedBoard && currentBoard.collaborators.find(c => c.id === user.id)?.role === 'observer'}
-                            className="task-checkbox"
-                            onClick={(e) => e.stopPropagation()}
-                          />
-                        </div>
-                        <div style={{ display: 'flex', gap: '8px', marginTop: '-8px' }}>
+                        <div className="task-buttons">
                           {(!isSharedBoard || (isSharedBoard && currentBoard.collaborators.find(c => c.id === user.id)?.role !== 'observer')) && (
                             <button 
                               className="delete-task-btn"
