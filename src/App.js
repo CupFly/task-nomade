@@ -361,7 +361,7 @@ const TaskBoard = ({ user, onLogout }) => {
                 createdAt: Date.now(),
                 comments: [],
                 id: Date.now().toString(),
-                color: '#FF6B6B' // Default color for new tasks
+                color: '#CF3333' // Default color for new tasks (red)
               }] 
             }
           : list
@@ -1725,38 +1725,53 @@ const TaskBoard = ({ user, onLogout }) => {
                       <div className="color-options">
                         <button 
                           className="color-option" 
-                          style={{ backgroundColor: '#FF6B6B' }}
-                          onClick={() => updateTaskColor(selectedTask.listIndex, selectedTask.taskIndex, '#FF6B6B')}
+                          style={{ backgroundColor: '#1D9C4E' }}
+                          onClick={() => updateTaskColor(selectedTask.listIndex, selectedTask.taskIndex, '#1D9C4E')}
                         />
                         <button 
                           className="color-option" 
-                          style={{ backgroundColor: '#4ECDC4' }}
-                          onClick={() => updateTaskColor(selectedTask.listIndex, selectedTask.taskIndex, '#4ECDC4')}
+                          style={{ backgroundColor: '#E6A23C' }}
+                          onClick={() => updateTaskColor(selectedTask.listIndex, selectedTask.taskIndex, '#E6A23C')}
                         />
                         <button 
                           className="color-option" 
-                          style={{ backgroundColor: '#FFD93D' }}
-                          onClick={() => updateTaskColor(selectedTask.listIndex, selectedTask.taskIndex, '#FFD93D')}
+                          style={{ backgroundColor: '#C24E1C' }}
+                          onClick={() => updateTaskColor(selectedTask.listIndex, selectedTask.taskIndex, '#C24E1C')}
                         />
                         <button 
                           className="color-option" 
-                          style={{ backgroundColor: '#95E1D3' }}
-                          onClick={() => updateTaskColor(selectedTask.listIndex, selectedTask.taskIndex, '#95E1D3')}
+                          style={{ backgroundColor: '#CF3333' }}
+                          onClick={() => updateTaskColor(selectedTask.listIndex, selectedTask.taskIndex, '#CF3333')}
                         />
                         <button 
                           className="color-option" 
-                          style={{ backgroundColor: '#F8B195' }}
-                          onClick={() => updateTaskColor(selectedTask.listIndex, selectedTask.taskIndex, '#F8B195')}
+                          style={{ backgroundColor: '#6B4EE6' }}
+                          onClick={() => updateTaskColor(selectedTask.listIndex, selectedTask.taskIndex, '#6B4EE6')}
                         />
                         <button 
                           className="color-option" 
-                          style={{ backgroundColor: '#6C5CE7' }}
-                          onClick={() => updateTaskColor(selectedTask.listIndex, selectedTask.taskIndex, '#6C5CE7')}
+                          style={{ backgroundColor: '#2152D9' }}
+                          onClick={() => updateTaskColor(selectedTask.listIndex, selectedTask.taskIndex, '#2152D9')}
                         />
                         <button 
                           className="color-option" 
-                          style={{ backgroundColor: '#A8E6CF' }}
-                          onClick={() => updateTaskColor(selectedTask.listIndex, selectedTask.taskIndex, '#A8E6CF')}
+                          style={{ backgroundColor: '#207B6E' }}
+                          onClick={() => updateTaskColor(selectedTask.listIndex, selectedTask.taskIndex, '#207B6E')}
+                        />
+                        <button 
+                          className="color-option" 
+                          style={{ backgroundColor: '#5E7E1F' }}
+                          onClick={() => updateTaskColor(selectedTask.listIndex, selectedTask.taskIndex, '#5E7E1F')}
+                        />
+                        <button 
+                          className="color-option" 
+                          style={{ backgroundColor: '#B44C97' }}
+                          onClick={() => updateTaskColor(selectedTask.listIndex, selectedTask.taskIndex, '#B44C97')}
+                        />
+                        <button 
+                          className="color-option" 
+                          style={{ backgroundColor: '#626477' }}
+                          onClick={() => updateTaskColor(selectedTask.listIndex, selectedTask.taskIndex, '#626477')}
                         />
                       </div>
                     </div>

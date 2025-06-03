@@ -177,7 +177,6 @@ body {
   box-shadow: var(--shadow-sm);
   display: flex;
   flex-direction: column;
-  transition: all 0.2s ease;
   cursor: pointer;
   user-select: none;
   position: relative;
@@ -185,13 +184,14 @@ body {
   border: 1px solid var(--task-border);
   height: fit-content;
   opacity: 1;
-  transition: opacity 0.2s ease, transform 0.2s ease;
+  transition: opacity 0.2s ease, transform 0.2s ease, background 0.3s ease;
   transform: none;
 }
 
 .task:hover {
   transform: translateY(-1px) scale(1.005);
   background: var(--secondary);
+  transition: opacity 0.2s ease, transform 0.2s ease, background 0.3s ease;
 }
 
 .task.completed {
@@ -1288,16 +1288,17 @@ body {
 }
 
 .color-options {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+  width: 100%;
 }
 
 .color-option {
-  width: 32px;
-  height: 32px;
-  border-radius: 6px;
-  border: 2px solid var(--border-color);
+  width: 100%;
+  height: 30px;
+  border-radius: 4px;
+  border: none;
   cursor: pointer;
   transition: all 0.2s ease;
   padding: 0;
@@ -1305,8 +1306,18 @@ body {
 
 .color-option:hover {
   transform: scale(1.1);
-  border-color: var(--primary);
 }
+
+.color-option:nth-child(1) { background-color: #1D9C4E; }  /* Green */
+.color-option:nth-child(2) { background-color: #E6A23C; }  /* Orange/Gold */
+.color-option:nth-child(3) { background-color: #C24E1C; }  /* Brown/Rust */
+.color-option:nth-child(4) { background-color: #CF3333; }  /* Red */
+.color-option:nth-child(5) { background-color: #6B4EE6; }  /* Purple */
+.color-option:nth-child(6) { background-color: #2152D9; }  /* Blue */
+.color-option:nth-child(7) { background-color: #207B6E; }  /* Teal */
+.color-option:nth-child(8) { background-color: #5E7E1F; }  /* Olive Green */
+.color-option:nth-child(9) { background-color: #B44C97; }  /* Pink/Magenta */
+.color-option:nth-child(10) { background-color: #626477; } /* Gray */
 
 .task-buttons {
   position: absolute;
@@ -1444,6 +1455,7 @@ body {
   box-shadow: var(--shadow-sm);
   width: 100%;
   margin: 0;
+  transition: opacity 0.2s ease, transform 0.2s ease, background 0.3s ease;
 }
 
 .edited-task-preview .task-title {
@@ -1665,6 +1677,7 @@ button::before {
 .task:hover {
   transform: translateY(-1px) scale(1.005);
   background: var(--secondary);
+  transition: opacity 0.2s ease, transform 0.2s ease, background 0.3s ease;
 }
 
 /* Enhanced list styles */
