@@ -966,7 +966,7 @@ const TaskBoard = ({ user, onLogout }) => {
     const modalWidth = rect.width + 24;
     const modalPadding = 16;
     const taskPreviewPadding = 16;
-    const verticalOffset = 8;
+    const verticalOffset = 20;
     
     const leftPosition = rect.left - (modalWidth - rect.width) / 2 - 2;
     
@@ -1007,7 +1007,7 @@ const TaskBoard = ({ user, onLogout }) => {
     const modalWidth = rect.width + 24;
     const modalPadding = 16;
     const taskPreviewPadding = 16;
-    const verticalOffset = 8;
+    const verticalOffset = 24;
     
     const leftPosition = rect.left - (modalWidth - rect.width) / 2 - 2;
     
@@ -1452,7 +1452,6 @@ const TaskBoard = ({ user, onLogout }) => {
                           }
                         }}
                       >
-                        {/* Task Title Section */}
                         <div className="task-title">
                           <input
                             type="checkbox"
@@ -1463,7 +1462,6 @@ const TaskBoard = ({ user, onLogout }) => {
                             onClick={(e) => e.stopPropagation()}
                           />
                           {editingTaskId === task.id ? (
-                            // Title Edit Mode
                             <textarea
                               className="task-title-edit"
                               value={editingTitle}
@@ -1498,25 +1496,16 @@ const TaskBoard = ({ user, onLogout }) => {
                               }}
                             />
                           ) : (
-                            // Title Display Mode
                             <span style={{ 
-                              whiteSpace: 'normal',
+                              whiteSpace: 'pre-wrap',
                               wordWrap: 'break-word',
                               display: 'block',
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                              display: '-webkit-box',
-                              WebkitLineClamp: 3,
-                              WebkitBoxOrient: 'vertical',
                               width: '100%',
-                              maxWidth: 'calc(100% - 2px)',
-                              paddingRight: '2px'
+                              maxWidth: '28ch',
+                              paddingRight: '2px',
+                              lineHeight: '1.4'
                             }}>{task.text}</span>
                           )}
-                        </div>
-
-                        {/* Task Controls Section */}
-                        <div className="task-content">
                           {(!isSharedBoard || (isSharedBoard && currentBoard.collaborators.find(c => c.id === user.id)?.role !== 'observer')) && (
                             <div className="task-buttons">
                               <button 
@@ -1642,29 +1631,6 @@ const TaskBoard = ({ user, onLogout }) => {
                           }}
                         />
                       </div>
-                      <div className="task-content">
-                        <div className="task-buttons">
-                          {(!isSharedBoard || (isSharedBoard && currentBoard.collaborators.find(c => c.id === user.id)?.role !== 'observer')) && (
-                            <button 
-                              className="delete-task-btn"
-                              onClick={() => {
-                                removeTask(selectedTask.listIndex, selectedTask.taskIndex);
-                                setSelectedTask(null);
-                              }}
-                              style={{ width: '59px', backgroundColor: '#FF3333' }}
-                            >
-                              Usuń
-                            </button>
-                          )}
-                          <button 
-                            className="edit-task-btn"
-                            onClick={() => setSelectedTask(null)}
-                            style={{ width: '59px' }}
-                          >
-                            Stop
-                          </button>
-                        </div>
-                      </div>
                     </div>
                   </div>
 
@@ -1711,6 +1677,27 @@ const TaskBoard = ({ user, onLogout }) => {
                       </div>
                     </div>
                   )}
+
+                  {/* Task Buttons */}
+                  <div className="task-modal-buttons">
+                    {(!isSharedBoard || (isSharedBoard && currentBoard.collaborators.find(c => c.id === user.id)?.role !== 'observer')) && (
+                      <button 
+                        className="delete-task-btn"
+                        onClick={() => {
+                          removeTask(selectedTask.listIndex, selectedTask.taskIndex);
+                          setSelectedTask(null);
+                        }}
+                      >
+                        Usuń
+                      </button>
+                    )}
+                    <button 
+                      className="edit-task-btn"
+                      onClick={() => setSelectedTask(null)}
+                    >
+                      Zamknij
+                    </button>
+                  </div>
                 </>
               ) : (
                 <>
@@ -1778,17 +1765,17 @@ const TaskBoard = ({ user, onLogout }) => {
             </div>
           </div>
         )}
-
-        {showCollaboratorModal && (
-          <CollaboratorModal
-            board={boards[currentBoardIndex]}
-            onClose={() => setShowCollaboratorModal(false)}
-            onAddCollaborator={handleAddCollaborator}
-            onRemoveCollaborator={handleRemoveCollaborator}
-            currentUser={user}
-          />
-        )}
       </div>
+
+      {showCollaboratorModal && (
+        <CollaboratorModal
+          board={boards[currentBoardIndex]}
+          onClose={() => setShowCollaboratorModal(false)}
+          onAddCollaborator={handleAddCollaborator}
+          onRemoveCollaborator={handleRemoveCollaborator}
+          currentUser={user}
+        />
+      )}
     </div>
   );
 };
