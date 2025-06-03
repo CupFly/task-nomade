@@ -128,11 +128,28 @@ body {
   margin: 0;
   width: calc(100% - 40px);
   outline: none;
+  transition: none;
+  cursor: default;
 }
 
 .list-title-input:disabled {
   opacity: 0.7;
   cursor: not-allowed;
+}
+
+.list-title-input:focus {
+  box-shadow: none;
+  transform: none;
+  border: none;
+  outline: none;
+  cursor: text !important;
+}
+
+.list-title-input:hover {
+  transform: none;
+  border: none;
+  outline: none;
+  cursor: default;
 }
 
 .list-title-input::placeholder {
@@ -181,7 +198,6 @@ body {
   font-weight: 600;
   color: #1a1a1a;
   width: 100%;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
   display: flex;
   align-items: flex-start;
   position: relative;
@@ -831,6 +847,9 @@ body {
   overflow-y: visible;
   display: flex;
   flex-direction: column;
+  backdrop-filter: blur(12px);
+  animation: none;
+  transition: none;
 }
 
 .task-modal-header {
@@ -986,6 +1005,8 @@ body {
   background: rgba(0, 0, 0, 0.5);
   z-index: 1000;
   overflow-y: auto;
+  backdrop-filter: blur(12px);
+  transition: none;
 }
 
 /* Custom scrollbar for modal overlay */
@@ -1153,8 +1174,8 @@ body {
 
 .task-buttons {
   position: absolute;
-  top: -4px;
-  right: -4px;
+  top: -7px;
+  right: -7px;
   opacity: 0;
   transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -1603,7 +1624,8 @@ input:focus {
 .collaborator-modal {
   backdrop-filter: blur(12px);
   box-shadow: var(--shadow-lg);
-  animation: modalEnter 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: none;
+  transition: none;
 }
 
 @keyframes modalEnter {
