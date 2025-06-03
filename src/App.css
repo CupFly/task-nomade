@@ -87,7 +87,7 @@ body {
   padding: 0;
   color: var(--text-primary);
   cursor: default;
-  transition: all 0.2s ease;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
   display: flex;
   flex-direction: column;
   max-height: calc(100vh - 100px);
@@ -95,6 +95,7 @@ body {
   flex-shrink: 0;
   border: 1px solid var(--border-color);
   margin: 4px;
+  opacity: 1 !important;
 }
 
 .list-table:hover {
@@ -162,6 +163,7 @@ body {
   margin: 0;
   overflow-y: auto;
   flex: 1;
+  opacity: 1 !important;
 }
 
 .task {
@@ -180,6 +182,9 @@ body {
   z-index: 1;
   border: 1px solid var(--task-border);
   height: fit-content;
+  opacity: 1;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  transform: none;
 }
 
 .task:hover {
@@ -1073,17 +1078,49 @@ body {
 }
 
 .task.dragging {
-  opacity: 0.5;
+  opacity: 0.5 !important;
   transform: scale(1.02);
   box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
   cursor: grabbing;
   z-index: 4;
 }
 
-.task.drag-over-top,
-.task.drag-over-bottom {
-  z-index: 2;
-  position: relative;
+/* Reset task styles after dragging */
+.task:not(.dragging) {
+  opacity: 1 !important;
+  transform: none;
+}
+
+/* Ensure list stays opaque when tasks are being dragged */
+.list-table:has(.task.dragging) {
+  opacity: 1;
+}
+
+/* Task drop indicators */
+.task.drag-over-top::before {
+  content: '';
+  position: absolute;
+  top: -4px;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: var(--primary);
+  border-radius: 2px;
+  box-shadow: 0 0 8px rgba(108, 99, 255, 0.5);
+  z-index: 3;
+}
+
+.task.drag-over-bottom::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: var(--primary);
+  border-radius: 2px;
+  box-shadow: 0 0 8px rgba(108, 99, 255, 0.5);
+  z-index: 3;
 }
 
 /* Custom scrollbar styles */
@@ -1780,4 +1817,136 @@ input:focus {
 .task-modal-buttons .delete-task-btn::after,
 .task-modal-buttons .edit-task-btn::after {
   content: none !important;
+}
+
+/* Task dragging styles */
+.task {
+  opacity: 1;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  transform: none;
+}
+
+.list-table .task-list {
+  transition: opacity 0.3s ease;
+}
+
+/* When a task is being dragged, keep the list opaque */
+.list-table .task.dragging {
+  opacity: 0.5;
+}
+
+/* When a list is being dragged, fade the entire list */
+.list-table[draggable="true"].dragging .task-list {
+  opacity: 0.5;
+}
+
+/* Base list styles */
+.list-table {
+  opacity: 1;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.list-table[draggable="true"]:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* List dragging styles */
+.list-table[draggable="true"].dragging {
+  opacity: 0.5;
+  transform: scale(1.02);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
+}
+
+.list-table.drag-over {
+  border: 2px dashed #5A00FF;
+  transform: translateY(-2px);
+}
+
+/* Task styles */
+.task {
+  opacity: 1;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  transform: none;
+}
+
+/* Task dragging styles */
+.task.dragging {
+  opacity: 0.5 !important;
+  transform: scale(1.02);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
+  cursor: grabbing;
+  z-index: 4;
+}
+
+/* Reset task styles after dragging */
+.task:not(.dragging) {
+  opacity: 1 !important;
+  transform: none;
+}
+
+/* Ensure list stays opaque when tasks are being dragged */
+.list-table:has(.task.dragging) {
+  opacity: 1;
+}
+
+/* Task drop indicators */
+.task.drag-over-top::before {
+  content: '';
+  position: absolute;
+  top: -4px;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: var(--primary);
+  border-radius: 2px;
+  box-shadow: 0 0 8px rgba(108, 99, 255, 0.5);
+  z-index: 3;
+}
+
+.task.drag-over-bottom::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: var(--primary);
+  border-radius: 2px;
+  box-shadow: 0 0 8px rgba(108, 99, 255, 0.5);
+  z-index: 3;
+}
+
+/* Only fade the list when the list itself is being dragged */
+.list-table.dragging {
+  opacity: 0.5 !important;
+  transform: scale(1.02);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
+}
+
+.list-table:not(.dragging) {
+  opacity: 1 !important;
+}
+
+/* Task dragging styles */
+.task {
+  opacity: 1 !important;
+  transition: transform 0.2s ease;
+}
+
+.task.dragging {
+  opacity: 0.5 !important;
+  transform: scale(1.02);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
+  cursor: grabbing;
+  z-index: 4;
+}
+
+.task:not(.dragging) {
+  opacity: 1 !important;
+}
+
+/* Ensure lists stay opaque during task dragging */
+.list-table:has(.task.dragging) {
+  opacity: 1 !important;
 }
