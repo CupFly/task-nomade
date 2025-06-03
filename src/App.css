@@ -1711,6 +1711,15 @@ input:focus {
   display: flex;
   align-items: center;
   height: 32px;
+  transition: font-weight 0.2s ease;
+}
+
+.add-task-btn:hover {
+  font-weight: 600;
+}
+
+.add-task-btn:hover span {
+  font-weight: 600;
 }
 
 .add-task-btn span {
@@ -1724,6 +1733,7 @@ input:focus {
   -webkit-font-smoothing: antialiased;
   position: relative;
   top: -5px;
+  transition: font-weight 0.2s ease;
 }
 
 .task-input-actions {
