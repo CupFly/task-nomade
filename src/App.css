@@ -109,7 +109,7 @@ body {
 
 .list-header {
   text-align: left;
-  padding: 12px 24px 0px 18px;
+  padding: 8px 24px 0px 18px;
   color: var(--text-primary);
   margin: 0;
   flex-shrink: 0;
@@ -402,7 +402,7 @@ body {
 }
 
 .task-input {
-  background: #1a1a1a;
+  background: #1f1f1f;
   border: none;
   color: var(--text-primary);
   padding: 8px 12px;
@@ -415,7 +415,7 @@ body {
 }
 
 .task-input:hover, .task-input:focus {
-  background: #1a1a1a;
+  background: #1f1f1f;
   outline: none;
   box-shadow: none;
   border: none;
@@ -428,14 +428,13 @@ body {
 
 .list-input {
   color: white;
-  background: #2A2A2A;
+  background: #1f1f1f;
   font-size: 14px;
   outline: none;
   width: 100%;
   padding: 8px 12px;
   border-radius: 6px;
   border: 1px solid #444;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   margin-top: 8px;
   flex-shrink: 0;
   transition: all 0.2s ease;
@@ -478,7 +477,7 @@ body {
   box-shadow: none !important;
   outline: none !important;
   padding: 0 !important;
-  margin: 0px -10px 0px 0px !important;
+  margin: 0px -15px 0px 0px !important;
   position: relative !important;
   z-index: 1001 !important;
   font-size: 15px !important;
@@ -489,10 +488,22 @@ body {
   color: #ffffff !important;
 }
 
+/* Add keyframes for context menu animation */
+@keyframes contextMenuAppear {
+  from {
+    opacity: 0;
+    transform: translateX(100%) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(100%) scale(1);
+  }
+}
+
 .list-context-menu {
   position: absolute;
   top: 24px;
-  right: 5px;
+  right: -2px;
   background: var(--background-light);
   border: 1px solid var(--border-color);
   border-radius: 6px;
@@ -501,6 +512,8 @@ body {
   z-index: 9999;
   transform: translateX(100%);
   margin-right: 12px;
+  animation: contextMenuAppear 0.2s ease-out;
+  transform-origin: top left;
 }
 
 .list-context-menu-item {
@@ -513,7 +526,7 @@ body {
   display: flex;
   align-items: center;
   gap: 6px;
-  transition: all 0.2s ease;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   background: transparent;
   border: none;
   width: 100%;
@@ -836,11 +849,6 @@ body {
   transition: all 0.2s ease;
 }
 
-.new-board-form input:focus {
-  border-color: #5A00FF;
-  box-shadow: 0 0 0 2px rgba(90, 0, 255, 0.2);
-}
-
 .new-board-form button {
   background: #5A00FF;
   color: white;
@@ -1073,7 +1081,6 @@ body {
 .comment-input:focus {
   outline: none;
   border-color: var(--primary);
-  box-shadow: 0 0 0 2px rgba(108, 99, 255, 0.2);
 }
 
 .add-comment-btn {
@@ -1495,7 +1502,6 @@ body {
 
 .collaborator-modal input[type="email"]:focus {
   border-color: var(--primary);
-  box-shadow: 0 0 0 2px rgba(108, 99, 255, 0.2);
 }
 
 .profile-form input[type="text"],
@@ -1514,7 +1520,6 @@ body {
 .profile-form input[type="text"]:focus,
 .profile-form input[type="email"]:focus {
   border-color: var(--primary);
-  box-shadow: 0 0 0 2px rgba(108, 99, 255, 0.2);
 }
 
 .list-table:last-child {
@@ -1736,11 +1741,6 @@ button::before {
 /* Enhanced input styles */
 input {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-input:focus {
-  box-shadow: var(--glow-primary);
-  transform: translateY(-2px);
 }
 
 /* Enhanced modal styles */
@@ -2053,11 +2053,11 @@ input:focus {
 }
 
 .copy-list-modal input {
-  width: 100%;
+  width: 90%;
   padding: 8px 12px;
   border: 1px solid var(--border-color);
   border-radius: 6px;
-  background: var(--surface);
+  background: #1f1f1f;
   color: var(--text-primary);
   font-size: 14px;
   margin: 12px 0;
@@ -2065,7 +2065,6 @@ input:focus {
 
 .copy-list-modal input:focus {
   outline: none;
-  border-color: #5A00FF;
 }
 
 .copy-list-modal-buttons {
@@ -2082,23 +2081,15 @@ input:focus {
   cursor: pointer;
   border: none;
   transition: all 0.2s ease;
-}
-
-.copy-list-modal-buttons .confirm {
-  background: #5A00FF;
-  color: white;
-}
-
-.copy-list-modal-buttons .confirm:hover {
-  background: #4500CC;
-}
-
-.copy-list-modal-buttons .cancel {
+  
   background: transparent;
   color: var(--text-primary);
   border: 1px solid var(--border-color);
 }
 
+.copy-list-modal-buttons .confirm:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
 .copy-list-modal-buttons .cancel:hover {
   background: rgba(255, 255, 255, 0.1);
 }
