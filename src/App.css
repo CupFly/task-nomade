@@ -109,7 +109,8 @@ body {
 
 .list-header {
   text-align: left;
-  padding: 8px 24px 0px 18px;
+  height: 40px;
+  padding: 0px 24px 0px 18px;
   color: var(--text-primary);
   margin: 0;
   flex-shrink: 0;

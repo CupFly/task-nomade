@@ -361,7 +361,7 @@ const TaskBoard = ({ user, onLogout }) => {
                 createdAt: Date.now(),
                 comments: [],
                 id: Date.now().toString(),
-                color: '#CF3333' // Default color for new tasks (red)
+                color: 'rgb(98, 100, 119)' // Default color for new tasks (red)
               }] 
             }
           : list
