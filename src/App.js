@@ -1501,7 +1501,7 @@ const TaskBoard = ({ user, onLogout }) => {
                               wordWrap: 'break-word',
                               display: 'block',
                               width: '100%',
-                              maxWidth: '28ch',
+                              maxWidth: '220px',
                               paddingRight: '2px',
                               lineHeight: '1.4'
                             }}>{task.text}</span>

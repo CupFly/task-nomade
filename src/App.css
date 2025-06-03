@@ -205,8 +205,7 @@ body {
   height: fit-content;
 }
 
-.task-title span,
-.task-title-edit {
+.task-title span {
   padding-left: 0;
   width: 100%;
   margin-left: -16px;
@@ -215,14 +214,14 @@ body {
   transform: translateX(-12px);
   height: fit-content;
   min-height: 24px;
+  max-width: 220px !important;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  display: block;
 }
 
 .task:hover .task-title span,
-.task:hover .task-title-edit,
-.task-checkbox:checked ~ span,
-.task-checkbox:checked ~ .task-title-edit,
-.edited-task-preview .task-title span,
-.edited-task-preview .task-title-edit {
+.task-checkbox:checked ~ span {
   transform: translateX(14px);
 }
 
@@ -244,10 +243,13 @@ body {
   word-wrap: break-word;
   word-break: break-word;
   font-family: inherit;
-  max-width: 28ch;
+  max-width: 220px;
   -webkit-spellcheck: false;
   spellcheck: false;
   text-align: left;
+  margin-left: -16px;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transform: translateX(-12px);
 }
 
 .task-title-edit:focus {
@@ -353,6 +355,7 @@ body {
   font-size: 14px;
   color: #000;
   mix-blend-mode: difference;
+  max-width: 200px;
 }
 
 .task.completed .task-text {
@@ -1325,9 +1328,9 @@ body {
   width: 100%;
   margin-right: 0;
   margin-bottom: 0;
-  margin-left: -21px;
+  margin-left: 5px;
   padding: 2px 2px 2px 4px;
-  max-width: 28ch;
+  max-width: 220px;
   white-space: pre-wrap;
   word-wrap: break-word;
   line-height: 1.4;
@@ -1725,11 +1728,6 @@ input:focus {
 
 .task-input-actions {
   display: none;
-}
-
-.task-title span {
-  flex: 1;
-  min-width: 0;
 }
 
 .task-modal-buttons {
