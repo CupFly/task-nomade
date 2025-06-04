@@ -23,11 +23,13 @@ const TaskBoard = ({ user, onLogout }) => {
   const [addingTaskToList, setAddingTaskToList] = useState(null);
   const [newTaskText, setNewTaskText] = useState('');
   const taskInputRef = useRef(null);
-  const [contextMenu, setContextMenu] = useState({ listIndex: null, visible: false });
+  const [boardContextMenu, setBoardContextMenu] = useState({ boardIndex: null, visible: false });
+  const [listContextMenu, setListContextMenu] = useState({ listIndex: null, visible: false });
   const [copyListModal, setCopyListModal] = useState({ visible: false, listIndex: null });
   const [newListName, setNewListName] = useState('');
   const fileInputRef = useRef(null);
   const [users] = useState(() => JSON.parse(localStorage.getItem('users') || '[]'));
+  const [boardEditPanel, setBoardEditPanel] = useState({ visible: false, boardIndex: null });
 
   const autoResizeTextarea = (element) => {
     if (element) {
@@ -1103,21 +1105,54 @@ const TaskBoard = ({ user, onLogout }) => {
     };
   }, []);
 
-  // Add this function to handle menu visibility
-  const handleContextMenu = (listIndex, e) => {
+  // Handle board menu visibility
+  const handleBoardEditClick = (boardIndex, e) => {
     e.preventDefault();
     e.stopPropagation();
-    setContextMenu({
+    setBoardEditPanel({
+      visible: true,
+      boardIndex
+    });
+  };
+
+  // Add handler to close the edit panel
+  const handleCloseBoardEdit = () => {
+    setBoardEditPanel({ visible: false, boardIndex: null });
+  };
+
+  // Update the click outside handler to include the edit panel
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      // Only close if clicking the overlay
+      if (event.target.classList.contains('board-edit-overlay')) {
+        setBoardEditPanel({ visible: false, boardIndex: null });
+      }
+    };
+
+    document.addEventListener('click', handleClickOutside);
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+    };
+  }, []);
+
+  // Handle list menu visibility
+  const handleListContextMenu = (listIndex, e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setListContextMenu({
       listIndex,
       visible: true
     });
   };
 
-  // Add this effect to handle clicking outside the menu
+  // Add click outside listeners for both menus
   useEffect(() => {
     const handleClickOutside = (event) => {
+      if (!event.target.closest('.board-menu-btn')) {
+        setBoardContextMenu({ boardIndex: null, visible: false });
+      }
       if (!event.target.closest('.list-menu-btn')) {
-        setContextMenu({ listIndex: null, visible: false });
+        setListContextMenu({ listIndex: null, visible: false });
       }
     };
 
@@ -1336,6 +1371,16 @@ const TaskBoard = ({ user, onLogout }) => {
                   onDrop={(e) => handleDrop(e, index)}
                 >
                   <div className="board-tab-content">
+                    {board.backgroundImage ? (
+                      <div 
+                        className="background-icon"
+                        style={{
+                          backgroundImage: `url(${board.backgroundImage})`
+                        }}
+                      />
+                    ) : (
+                      <div className="background-icon" />
+                    )}
                     <span className="board-title">{board.title}</span>
                     {isSharedBoard && (
                       <span className="shared-label">
@@ -1344,41 +1389,15 @@ const TaskBoard = ({ user, onLogout }) => {
                     )}
                   </div>
                   <div className="board-actions">
-                    {!isSharedBoard && boards.length > 1 && (
-                      <button
-                        className="remove-board-btn"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          removeBoard(index);
-                        }}
-                      >
-                        ×
-                      </button>
-                    )}
-                    {isSharedBoard ? (
-                      <button
-                        className="leave-board-btn"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          e.preventDefault();
-                          handleLeaveBoard(index);
-                        }}
-                      >
-                        Opuść tablicę
-                      </button>
-                    ) : (
-                      <button
-                        className="share-board-btn"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (currentBoardIndex < boards.length) {
-                            setShowCollaboratorModal(true);
-                          }
-                        }}
-                      >
-                        Udostępnij
-                      </button>
-                    )}
+                    <button 
+                      className="board-menu-btn"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleBoardEditClick(index, e);
+                      }}
+                    >
+                      •••
+                    </button>
                   </div>
                 </div>
               );
@@ -1402,10 +1421,7 @@ const TaskBoard = ({ user, onLogout }) => {
           <div 
             className="board" 
             style={{
-              backgroundImage: currentBoard?.backgroundImage ? `url(${currentBoard.backgroundImage})` : 'none',
-              backgroundSize: 'cover',
-              backgroundPosition: 'center',
-              backgroundRepeat: 'no-repeat'
+              backgroundImage: currentBoard?.backgroundImage ? `url(${currentBoard.backgroundImage})` : null
             }}
           >
             <input
@@ -1415,26 +1431,6 @@ const TaskBoard = ({ user, onLogout }) => {
               accept="image/*"
               onChange={handleFileSelect}
             />
-            <div className="background-buttons">
-              <button 
-                className="background-image-btn"
-                onClick={handleBackgroundChange}
-                title="Change background image"
-              >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-                  <circle cx="8.5" cy="8.5" r="1.5"/>
-                  <polyline points="21 15 16 10 5 21"/>
-                </svg>
-              </button>
-              <button 
-                className="reset-background-btn"
-                onClick={handleResetBackground}
-                title="Reset background"
-              >
-                ↺
-              </button>
-            </div>
             {currentBoard.lists.map((list, listIndex) => (
               <div 
                 className="list-table" 
@@ -1473,11 +1469,11 @@ const TaskBoard = ({ user, onLogout }) => {
                     <div style={{ position: 'relative' }}>
                       <button 
                         className="list-menu-btn"
-                        onClick={(e) => handleContextMenu(listIndex, e)}
+                        onClick={(e) => handleListContextMenu(listIndex, e)}
                       >
                         •••
                       </button>
-                      {contextMenu.visible && contextMenu.listIndex === listIndex && (
+                      {listContextMenu.visible && listContextMenu.listIndex === listIndex && (
                         <div className="list-context-menu">
                           <button 
                             className="list-context-menu-item"
@@ -1485,7 +1481,7 @@ const TaskBoard = ({ user, onLogout }) => {
                               const currentBoard = isSharedBoard ? sharedBoards[currentBoardIndex - boards.length] : boards[currentBoardIndex];
                               setNewListName(currentBoard.lists[listIndex].title);
                               setCopyListModal({ visible: true, listIndex });
-                              setContextMenu({ listIndex: null, visible: false });
+                              setListContextMenu({ listIndex: null, visible: false });
                             }}
                           >
                             <span className="icon">⧉</span>
@@ -1495,7 +1491,7 @@ const TaskBoard = ({ user, onLogout }) => {
                             className="list-context-menu-item delete"
                             onClick={() => {
                               removeList(listIndex);
-                              setContextMenu({ listIndex: null, visible: false });
+                              setListContextMenu({ listIndex: null, visible: false });
                             }}
                           >
                             <span className="icon">×</span>
@@ -1914,6 +1910,92 @@ const TaskBoard = ({ user, onLogout }) => {
               >
                 Kopiuj
               </button>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Add the board edit panel */}
+      {boardEditPanel.visible && (
+        <>
+          <div className="board-edit-overlay" />
+          <div className="board-edit-panel">
+            <div className="board-edit-panel-header">
+              <h3>Edycja tablicy</h3>
+              <button 
+                className="board-edit-panel-close"
+                onClick={handleCloseBoardEdit}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="board-edit-section">
+              <h4>Tło tablicy</h4>
+              <div 
+                className="board-background-preview"
+                style={{
+                  backgroundImage: allBoards[boardEditPanel.boardIndex]?.backgroundImage 
+                    ? `url(${allBoards[boardEditPanel.boardIndex].backgroundImage})`
+                    : null
+                }}
+              >
+                {!allBoards[boardEditPanel.boardIndex]?.backgroundImage && 'Domyślne tło'}
+              </div>
+              <div className="board-background-actions">
+                <button onClick={() => {
+                  handleCloseBoardEdit();
+                  handleBackgroundChange();
+                }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                    <circle cx="8.5" cy="8.5" r="1.5"/>
+                    <polyline points="21 15 16 10 5 21"/>
+                  </svg>
+                  Zmień
+                </button>
+                <button onClick={() => {
+                  handleResetBackground();
+                  handleCloseBoardEdit();
+                }}>
+                  <span style={{ fontSize: '16px' }}>↺</span>
+                  Reset
+                </button>
+              </div>
+            </div>
+
+            <div className="board-edit-panel-footer">
+              {boardEditPanel.boardIndex < boards.length && (
+                <button 
+                  onClick={() => {
+                    handleCloseBoardEdit();
+                    setShowCollaboratorModal(true);
+                  }}
+                >
+                  Udostępnij tablicę
+                </button>
+              )}
+              {boardEditPanel.boardIndex >= boards.length ? (
+                <button 
+                  className="danger"
+                  onClick={() => {
+                    handleLeaveBoard(boardEditPanel.boardIndex);
+                    handleCloseBoardEdit();
+                  }}
+                >
+                  Opuść tablicę
+                </button>
+              ) : boards.length > 1 && (
+                <button 
+                  className="danger"
+                  onClick={() => {
+                    removeBoard(boardEditPanel.boardIndex);
+                    handleCloseBoardEdit();
+                  }}
+                >
+                  Usuń tablicę
+                </button>
+              )}
             </div>
           </div>
         </>
