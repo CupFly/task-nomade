@@ -118,6 +118,7 @@ const Auth = ({ onLogin }) => {
   return (
     <div className="auth-container">
       <div className="auth-box">
+        <div className="app-title">Task Nomade</div>
         <h2>{isLogin ? 'Logowanie' : 'Rejestracja'}</h2>
         {error && <div className="error-message">{error}</div>}
         <form onSubmit={handleSubmit}>

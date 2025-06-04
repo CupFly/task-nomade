@@ -13,7 +13,6 @@ const TaskBoard = ({ user, onLogout }) => {
   const [newListTitle, setNewListTitle] = useState("");
   const [newBoardTitle, setNewBoardTitle] = useState("");
   const [showCollaboratorModal, setShowCollaboratorModal] = useState(false);
-  const [lastUpdate, setLastUpdate] = useState(Date.now());
   const [forceUpdate, setForceUpdate] = useState(0);
   const [editingTaskId, setEditingTaskId] = useState(null);
   const [editingTitle, setEditingTitle] = useState("");
@@ -27,6 +26,8 @@ const TaskBoard = ({ user, onLogout }) => {
   const [contextMenu, setContextMenu] = useState({ listIndex: null, visible: false });
   const [copyListModal, setCopyListModal] = useState({ visible: false, listIndex: null });
   const [newListName, setNewListName] = useState('');
+  const fileInputRef = useRef(null);
+  const [users] = useState(() => JSON.parse(localStorage.getItem('users') || '[]'));
 
   const autoResizeTextarea = (element) => {
     if (element) {
@@ -78,7 +79,8 @@ const TaskBoard = ({ user, onLogout }) => {
             { title: "Zrobione", tasks: [] },
           ],
           collaborators: [],
-          lastModified: Date.now()
+          lastModified: Date.now(),
+          backgroundImage: null
         }
       ];
       setBoards(defaultBoards);
@@ -89,8 +91,6 @@ const TaskBoard = ({ user, onLogout }) => {
     const savedSharedBoards = localStorage.getItem(`shared_boards_${user.id}`);
     if (savedSharedBoards) {
       const sharedBoards = JSON.parse(savedSharedBoards);
-      const users = JSON.parse(localStorage.getItem('users') || '[]');
-      
       const updatedSharedBoards = sharedBoards.map(board => {
         const owner = users.find(u => u.id === board.ownerId);
         return {
@@ -102,7 +102,7 @@ const TaskBoard = ({ user, onLogout }) => {
       setSharedBoards(updatedSharedBoards);
       localStorage.setItem(`shared_boards_${user.id}`, JSON.stringify(updatedSharedBoards));
     }
-  }, [user.id]);
+  }, [user.id, users]);
 
   // Poll for updates to shared boards and owned boards that are shared
   useEffect(() => {
@@ -141,13 +141,12 @@ const TaskBoard = ({ user, onLogout }) => {
     }, 1000); // Poll every second
 
     return () => clearInterval(pollInterval);
-  }, [boards, user.id]);
+  }, [boards, user.id, users]);
 
   // Save boards whenever they change
   useEffect(() => {
     if (boards.length > 0) {
       localStorage.setItem(`boards_${user.id}`, JSON.stringify(boards));
-      setLastUpdate(Date.now());
     }
   }, [boards, user.id]);
 
@@ -155,7 +154,6 @@ const TaskBoard = ({ user, onLogout }) => {
   useEffect(() => {
     if (sharedBoards.length > 0) {
       localStorage.setItem(`shared_boards_${user.id}`, JSON.stringify(sharedBoards));
-      setLastUpdate(Date.now());
     }
   }, [sharedBoards, user.id]);
 
@@ -167,8 +165,6 @@ const TaskBoard = ({ user, onLogout }) => {
     if (sharedBoards.length > 0) {
       localStorage.setItem(`shared_boards_${user.id}`, JSON.stringify(sharedBoards));
     }
-    // Remove only the current user session
-    localStorage.removeItem('currentUser');
     onLogout();
   };
 
@@ -193,47 +189,45 @@ const TaskBoard = ({ user, onLogout }) => {
     if (isSharedBoard) {
       // Update in shared boards
       const newSharedBoards = sharedBoards.map(board =>
-        board.title === updatedBoard.title ? updatedBoard : board
+        board.title === updatedBoard.title ? {
+          ...updatedBoard,
+          backgroundImage: updatedBoard.backgroundImage || board.backgroundImage
+        } : board
       );
       setSharedBoards(newSharedBoards);
       localStorage.setItem(`shared_boards_${user.id}`, JSON.stringify(newSharedBoards));
 
-      // Update owner's board
-      const ownerBoards = JSON.parse(localStorage.getItem(`boards_${updatedBoard.ownerId}`) || '[]');
-      const updatedOwnerBoards = ownerBoards.map(board =>
-        board.title === updatedBoard.title
-          ? { ...board, lists: updatedBoard.lists, lastModified: timestamp }
-          : board
-      );
-      localStorage.setItem(`boards_${updatedBoard.ownerId}`, JSON.stringify(updatedOwnerBoards));
-
-      // Update for all other collaborators
-      updatedBoard.collaborators?.forEach(collaborator => {
-        if (collaborator.id !== user.id) {
-          const collaboratorBoards = JSON.parse(localStorage.getItem(`shared_boards_${collaborator.id}`) || '[]');
-          const updatedCollaboratorBoards = collaboratorBoards.map(board =>
-            board.title === updatedBoard.title
-              ? { ...board, lists: updatedBoard.lists, lastModified: timestamp }
-              : board
-          );
-          localStorage.setItem(`shared_boards_${collaborator.id}`, JSON.stringify(updatedCollaboratorBoards));
-        }
-      });
+      // Sync with owner's board
+      const owner = users.find(u => u.id === updatedBoard.ownerId);
+      if (owner) {
+        const ownerBoards = JSON.parse(localStorage.getItem(`boards_${owner.id}`) || '[]');
+        const updatedOwnerBoards = ownerBoards.map(board =>
+          board.title === updatedBoard.title ? {
+            ...updatedBoard,
+            backgroundImage: updatedBoard.backgroundImage || board.backgroundImage
+          } : board
+        );
+        localStorage.setItem(`boards_${owner.id}`, JSON.stringify(updatedOwnerBoards));
+      }
     } else {
-      // Update owner's board and propagate to collaborators
+      // Update in user's boards
       const newBoards = boards.map(board =>
-        board.title === updatedBoard.title ? updatedBoard : board
+        board.title === updatedBoard.title ? {
+          ...updatedBoard,
+          backgroundImage: updatedBoard.backgroundImage || board.backgroundImage
+        } : board
       );
       setBoards(newBoards);
       localStorage.setItem(`boards_${user.id}`, JSON.stringify(newBoards));
 
-      // Update for all collaborators
+      // Sync with all collaborators
       updatedBoard.collaborators?.forEach(collaborator => {
         const collaboratorBoards = JSON.parse(localStorage.getItem(`shared_boards_${collaborator.id}`) || '[]');
         const updatedCollaboratorBoards = collaboratorBoards.map(board =>
-          board.title === updatedBoard.title
-            ? { ...board, lists: updatedBoard.lists, lastModified: timestamp }
-            : board
+          board.title === updatedBoard.title ? {
+            ...updatedBoard,
+            backgroundImage: updatedBoard.backgroundImage || board.backgroundImage
+          } : board
         );
         localStorage.setItem(`shared_boards_${collaborator.id}`, JSON.stringify(updatedCollaboratorBoards));
       });
@@ -250,7 +244,7 @@ const TaskBoard = ({ user, onLogout }) => {
   const updateTaskColor = (listIndex, taskIndex, color) => {
     const currentBoard = isSharedBoard ? sharedBoards[currentBoardIndex - boards.length] : boards[currentBoardIndex];
 
-    // Prevent observers from changing task colors in shared boards
+    // Zapobiegaj dodawaniu zadań przez obserwatorów w udostępnionych tablicach
     if (isSharedBoard) {
       const userRole = currentBoard.collaborators.find(c => c.id === user.id)?.role;
       if (userRole === 'observer') return;
@@ -296,7 +290,7 @@ const TaskBoard = ({ user, onLogout }) => {
     
     const currentBoard = isSharedBoard ? sharedBoards[currentBoardIndex - boards.length] : boards[currentBoardIndex];
 
-    // Prevent observers from editing titles in shared boards
+    // Zapobiegaj edycji tytułów w udostępnionych tablicach
     if (isSharedBoard) {
       const userRole = currentBoard.collaborators.find(c => c.id === user.id)?.role;
       if (userRole === 'observer') return;
@@ -329,21 +323,21 @@ const TaskBoard = ({ user, onLogout }) => {
   };
 
   /**
-   * Task Creation
-   * - New tasks are created with a default red background (#ff0000)
-   * - Each task has a unique ID based on timestamp
-   * - Tasks include support for:
-   *   - Custom colors
-   *   - Editable titles
-   *   - Comments
-   *   - Completion status
+   * Tworzenie zadań
+   * - Nowe zadania są tworzone z domyślnym szarym tłem (rgb(98, 100, 119))
+   * - Każde zadanie ma unikalny identyfikator oparty na znaczniku czasu
+   * - Zadania zawierają wsparcie dla:
+   *   - Niestandardowych kolorów
+   *   - Edytowalnych tytułów
+   *   - Komentarzy
+   *   - Statusu ukończenia
    */
   const addTask = (listIndex, task) => {
     if (!task.trim()) return;
     
     const currentBoard = isSharedBoard ? sharedBoards[currentBoardIndex - boards.length] : boards[currentBoardIndex];
 
-    // Prevent observers from adding tasks in shared boards
+    // Zapobiegaj dodawaniu zadań przez obserwatorów w udostępnionych tablicach
     if (isSharedBoard) {
       const userRole = currentBoard.collaborators.find(c => c.id === user.id)?.role;
       if (userRole === 'observer') return;
@@ -375,11 +369,11 @@ const TaskBoard = ({ user, onLogout }) => {
 
     const currentBoard = isSharedBoard ? sharedBoards[currentBoardIndex - boards.length] : boards[currentBoardIndex];
 
-    // Check if user is an observer
+    // Sprawdź, czy użytkownik jest obserwatorem
     if (isSharedBoard) {
       const userRole = currentBoard.collaborators.find(c => c.id === user.id)?.role;
       if (userRole === 'observer') {
-        return; // Observers cannot add comments
+        return; // Obserwatorzy nie mogą dodawać komentarzy
       }
     }
 
@@ -410,7 +404,7 @@ const TaskBoard = ({ user, onLogout }) => {
     };
     syncBoardChanges(updatedBoard, isSharedBoard);
 
-    // Update the selected task's comments
+    // Aktualizuj komentarze wybranego zadania
     if (selectedTask && selectedTask.listIndex === listIndex && selectedTask.taskIndex === taskIndex) {
       setSelectedTask(prev => ({
         ...prev,
@@ -432,10 +426,10 @@ const TaskBoard = ({ user, onLogout }) => {
   const removeComment = (listIndex, taskIndex, commentId) => {
     const currentBoard = isSharedBoard ? sharedBoards[currentBoardIndex - boards.length] : boards[currentBoardIndex];
 
-    // Only allow comment removal by the comment author or board owner
+    // Tylko autor komentarza lub właściciel tablicy może usuwać komentarze
     const comment = currentBoard.lists[listIndex].tasks[taskIndex].comments.find(c => c.id === commentId);
     if (isSharedBoard && comment.userId !== user.id && currentBoard.ownerId !== user.id) {
-      return; // Only comment author or board owner can remove comments
+      return; // Tylko autor komentarza lub właściciel tablicy może usuwać komentarze
     }
 
     const updatedBoard = {
@@ -596,7 +590,8 @@ const TaskBoard = ({ user, onLogout }) => {
       lists: [],
       collaborators: [],
       order: boards.length,
-      lastModified: Date.now()
+      lastModified: Date.now(),
+      backgroundImage: null
     };
     setBoards([...boards, newBoard]);
     localStorage.setItem(`boards_${user.id}`, JSON.stringify([...boards, newBoard]));
@@ -629,68 +624,65 @@ const TaskBoard = ({ user, onLogout }) => {
   }, [boardOrder, user.id]);
 
   const moveBoard = (fromIndex, toIndex) => {
+    // Determine if we're moving between owned and shared boards
     const isFromShared = fromIndex >= boards.length;
     const isToShared = toIndex >= boards.length;
+    
+    // Only allow reordering within the same section (owned or shared)
+    if (isFromShared === isToShared) {
+      if (isFromShared) {
+        // Reordering shared boards
+        const sharedFromIndex = fromIndex - boards.length;
+        const sharedToIndex = toIndex - boards.length;
+        
+        // Update the shared boards array
+        const newSharedBoards = [...sharedBoards];
+        const [movedBoard] = newSharedBoards.splice(sharedFromIndex, 1);
+        newSharedBoards.splice(sharedToIndex, 0, movedBoard);
+        setSharedBoards(newSharedBoards);
+        
+        // Update the order
+        const newSharedOrder = Array.from({ length: newSharedBoards.length }, (_, i) => i);
+        setBoardOrder(prev => ({
+          ...prev,
+          shared: newSharedOrder
+        }));
 
-    // If moving between different sections (owned/shared), return
-    if (isFromShared !== isToShared) {
-      return;
-    }
+        // Update current board index if necessary
+        if (currentBoardIndex === fromIndex) {
+          setCurrentBoardIndex(toIndex);
+        } else if (currentBoardIndex > fromIndex && currentBoardIndex <= toIndex) {
+          setCurrentBoardIndex(currentBoardIndex - 1);
+        } else if (currentBoardIndex < fromIndex && currentBoardIndex >= toIndex) {
+          setCurrentBoardIndex(currentBoardIndex + 1);
+        }
+      } else {
+        // Reordering owned boards
+        const newBoards = [...boards];
+        const [movedBoard] = newBoards.splice(fromIndex, 1);
+        newBoards.splice(toIndex, 0, movedBoard);
+        setBoards(newBoards);
+        
+        // Update the order
+        const newOwnedOrder = Array.from({ length: newBoards.length }, (_, i) => i);
+        setBoardOrder(prev => ({
+          ...prev,
+          owned: newOwnedOrder
+        }));
 
-    if (isFromShared) {
-      // Moving shared boards
-      const sharedFromIndex = fromIndex - boards.length;
-      const sharedToIndex = toIndex - boards.length;
-
-      const newSharedBoards = [...sharedBoards];
-      const [movedBoard] = newSharedBoards.splice(sharedFromIndex, 1);
-      newSharedBoards.splice(sharedToIndex, 0, movedBoard);
-      setSharedBoards(newSharedBoards);
-
-      // Update the order
-      const newSharedOrder = Array.from({ length: newSharedBoards.length }, (_, i) => i);
-      setBoardOrder(prev => ({
-        ...prev,
-        shared: newSharedOrder
-      }));
-
-      // Update current board index if necessary
-      if (currentBoardIndex === fromIndex) {
-        setCurrentBoardIndex(toIndex);
-      } else if (currentBoardIndex > fromIndex && currentBoardIndex <= toIndex) {
-        setCurrentBoardIndex(currentBoardIndex - 1);
-      } else if (currentBoardIndex < fromIndex && currentBoardIndex >= toIndex) {
-        setCurrentBoardIndex(currentBoardIndex + 1);
+        // Update current board index if necessary
+        if (currentBoardIndex === fromIndex) {
+          setCurrentBoardIndex(toIndex);
+        } else if (currentBoardIndex > fromIndex && currentBoardIndex <= toIndex) {
+          setCurrentBoardIndex(currentBoardIndex - 1);
+        } else if (currentBoardIndex < fromIndex && currentBoardIndex >= toIndex) {
+          setCurrentBoardIndex(currentBoardIndex + 1);
+        }
       }
-    } else {
-      // Moving owned boards
-      const newBoards = [...boards];
-      const [movedBoard] = newBoards.splice(fromIndex, 1);
-      newBoards.splice(toIndex, 0, movedBoard);
-      setBoards(newBoards);
-
-      // Update the order
-      const newOwnedOrder = Array.from({ length: newBoards.length }, (_, i) => i);
-      setBoardOrder(prev => ({
-        ...prev,
-        owned: newOwnedOrder
-      }));
-
-      // Update current board index if necessary
-      if (currentBoardIndex === fromIndex) {
-        setCurrentBoardIndex(toIndex);
-      } else if (currentBoardIndex > fromIndex && currentBoardIndex <= toIndex) {
-        setCurrentBoardIndex(currentBoardIndex - 1);
-      } else if (currentBoardIndex < fromIndex && currentBoardIndex >= toIndex) {
-        setCurrentBoardIndex(currentBoardIndex + 1);
-      }
     }
-
-    // Force a refresh of the board effects
-    setForceUpdate(prev => prev + 1);
   };
 
-  // Function to get ordered boards
+  // Get ordered boards
   const getOrderedBoards = () => {
     return [...boards, ...sharedBoards];
   };
@@ -862,26 +854,17 @@ const TaskBoard = ({ user, onLogout }) => {
   }, [user.id, boards, sharedBoards, currentBoardIndex, isSharedBoard]);
 
   const handleLeaveBoard = (boardIndex) => {
-    // Check if it's a valid shared board index
-    if (boardIndex < boards.length || boardIndex >= boards.length + sharedBoards.length) {
+    const allBoards = getOrderedBoards();
+    const boardToLeave = allBoards[boardIndex];
+    
+    // Check if it's a shared board
+    if (!boardToLeave || boardIndex < boards.length) {
       console.error('Invalid board index for leaving a shared board');
       return;
     }
 
     const sharedBoardIndex = boardIndex - boards.length;
-    const boardToLeave = sharedBoards[sharedBoardIndex];
-
-    // Validate that we have a valid board to leave
-    if (!boardToLeave || !boardToLeave.ownerId) {
-      console.error('Invalid board data for leaving a shared board');
-      return;
-    }
     
-    // Remove board from user's shared boards
-    const newSharedBoards = sharedBoards.filter((_, index) => index !== sharedBoardIndex);
-    setSharedBoards(newSharedBoards);
-    localStorage.setItem(`shared_boards_${user.id}`, JSON.stringify(newSharedBoards));
-
     try {
       // Update owner's board to remove this user from collaborators
       const ownerBoards = JSON.parse(localStorage.getItem(`boards_${boardToLeave.ownerId}`) || '[]');
@@ -896,6 +879,11 @@ const TaskBoard = ({ user, onLogout }) => {
       );
       localStorage.setItem(`boards_${boardToLeave.ownerId}`, JSON.stringify(updatedOwnerBoards));
 
+      // Remove board from user's shared boards
+      const newSharedBoards = sharedBoards.filter((_, index) => index !== sharedBoardIndex);
+      setSharedBoards(newSharedBoards);
+      localStorage.setItem(`shared_boards_${user.id}`, JSON.stringify(newSharedBoards));
+
       // Switch to first available board if current board is being left
       if (currentBoardIndex === boardIndex) {
         setCurrentBoardIndex(0);
@@ -903,9 +891,11 @@ const TaskBoard = ({ user, onLogout }) => {
         // Adjust current board index if we're leaving a board that comes before the current one
         setCurrentBoardIndex(currentBoardIndex - 1);
       }
+
+      // Force update the collaborator modal if it's open
+      setForceUpdate(prev => prev + 1);
     } catch (error) {
-      console.error('Error updating owner boards:', error);
-      // Still remove the board from user's shared boards even if updating owner's boards fails
+      console.error('Error leaving board:', error);
     }
   };
 
@@ -965,7 +955,7 @@ const TaskBoard = ({ user, onLogout }) => {
     const taskElement = e.currentTarget.closest('.task');
     const rect = taskElement.getBoundingClientRect();
     
-    // Calculate position to center the modal relative to the task
+    // Oblicz pozycję, aby wyśrodkować modal względem zadania
     const modalWidth = rect.width + 24;
     const modalPadding = 16;
     const taskPreviewPadding = 16;
@@ -992,7 +982,7 @@ const TaskBoard = ({ user, onLogout }) => {
     setEditingTitle(task.text);
     setEditingTaskId(task.id);
 
-    // Set initial height after a small delay to ensure the textarea is rendered
+    // Ustaw początkową wysokość po małym opóźnieniu, aby upewnić się, że textarea jest wyrenderowana
     setTimeout(() => {
       const textarea = document.querySelector('.task-title-edit');
       if (textarea) {
@@ -1162,6 +1152,140 @@ const TaskBoard = ({ user, onLogout }) => {
     syncBoardChanges(updatedBoard, isSharedBoard);
   };
 
+  // Add background image state
+  const handleBackgroundChange = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleResetBackground = () => {
+    const updatedBoard = {
+      ...currentBoard,
+      backgroundImage: null
+    };
+    
+    if (isSharedBoard) {
+      const newSharedBoards = sharedBoards.map(board =>
+        board.title === currentBoard.title ? updatedBoard : board
+      );
+      setSharedBoards(newSharedBoards);
+    } else {
+      const newBoards = boards.map((board, index) =>
+        index === currentBoardIndex ? updatedBoard : board
+      );
+      setBoards(newBoards);
+    }
+  };
+
+  const handleFileSelect = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const imageUrl = e.target?.result;
+        if (imageUrl) {
+          const updatedBoard = {
+            ...currentBoard,
+            backgroundImage: imageUrl
+          };
+          
+          if (isSharedBoard) {
+            const newSharedBoards = sharedBoards.map(board =>
+              board.title === currentBoard.title ? updatedBoard : board
+            );
+            setSharedBoards(newSharedBoards);
+          } else {
+            const newBoards = boards.map((board, index) =>
+              index === currentBoardIndex ? updatedBoard : board
+            );
+            setBoards(newBoards);
+          }
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    const taskData = e.dataTransfer.getData('application/json');
+    if (taskData) {
+      const rect = e.currentTarget.getBoundingClientRect();
+      const y = e.clientY;
+      const tasks = e.currentTarget.querySelectorAll('.task');
+      
+      // Remove existing indicators
+      tasks.forEach(task => task.classList.remove('drag-over-top', 'drag-over-bottom'));
+      
+      // Find the task under the cursor
+      let targetTask = null;
+      
+      tasks.forEach((task, index) => {
+        const taskRect = task.getBoundingClientRect();
+        if (y >= taskRect.top && y <= taskRect.bottom) {
+          targetTask = task;
+        }
+      });
+      
+      if (targetTask) {
+        const taskRect = targetTask.getBoundingClientRect();
+        const threshold = taskRect.top + taskRect.height / 2;
+        
+        if (y < threshold) {
+          targetTask.classList.add('drag-over-top');
+        } else {
+          targetTask.classList.add('drag-over-bottom');
+        }
+      }
+    }
+    e.currentTarget.classList.add('drag-over');
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX;
+    const y = e.clientY;
+    
+    // Only remove classes if cursor is actually outside the element
+    if (x <= rect.left || x >= rect.right || y <= rect.top || y >= rect.bottom) {
+      e.currentTarget.classList.remove('drag-over');
+      e.currentTarget.querySelectorAll('.task').forEach(task => {
+        task.classList.remove('drag-over-top', 'drag-over-bottom');
+      });
+    }
+  };
+
+  const handleDrop = (e, listIndex) => {
+    e.preventDefault();
+    cleanupDragStates();
+    
+    const taskData = e.dataTransfer.getData('application/json');
+    if (taskData) {
+      const { fromListIndex, fromTaskIndex } = JSON.parse(taskData);
+      const tasks = e.currentTarget.querySelectorAll('.task');
+      let dropIndex = tasks.length; // Default to end of list
+      
+      // Find the drop position
+      tasks.forEach((task, index) => {
+        const taskRect = task.getBoundingClientRect();
+        if (e.clientY >= taskRect.top && e.clientY <= taskRect.bottom) {
+          const threshold = taskRect.top + taskRect.height / 2;
+          dropIndex = e.clientY < threshold ? index : index + 1;
+        }
+      });
+      
+      // Only move if it's a different position
+      if (fromListIndex !== listIndex || fromTaskIndex !== dropIndex) {
+        moveTask(fromListIndex, listIndex, fromTaskIndex, dropIndex);
+      }
+    } else {
+      const fromIndex = parseInt(e.dataTransfer.getData('text/plain'));
+      if (fromIndex !== listIndex) {
+        moveList(fromIndex, listIndex);
+      }
+    }
+  };
+
   return (
     <div className="app-container" key={forceUpdate}>
       <div className="sidebar">
@@ -1169,6 +1293,7 @@ const TaskBoard = ({ user, onLogout }) => {
           className="header clickable"
           onClick={() => navigate('/profile')}
         >
+          <div className="app-title">Task Nomade</div>
           <div className="header-content">
             <div 
               className="profile-avatar small"
@@ -1207,88 +1332,14 @@ const TaskBoard = ({ user, onLogout }) => {
                     e.preventDefault();
                     e.currentTarget.classList.add('drag-over');
                   }}
-                  onDragLeave={(e) => {
-                    e.preventDefault();
-                    const rect = e.currentTarget.getBoundingClientRect();
-                    const x = e.clientX;
-                    const y = e.clientY;
-                    if (x <= rect.left || x >= rect.right || y <= rect.top || y >= rect.bottom) {
-                      e.currentTarget.classList.remove('drag-over');
-                    }
-                  }}
-                  onDrop={(e) => {
-                    e.preventDefault();
-                    cleanupDragStates();
-                    
-                    const fromIndex = parseInt(e.dataTransfer.getData('text/plain'));
-                    const toIndex = index;
-                    
-                    if (fromIndex !== toIndex) {
-                      // Determine if we're moving between owned and shared boards
-                      const isFromShared = fromIndex >= boards.length;
-                      const isToShared = toIndex >= boards.length;
-                      
-                      // Only allow reordering within the same section (owned or shared)
-                      if (isFromShared === isToShared) {
-                        if (isFromShared) {
-                          // Reordering shared boards
-                          const sharedFromIndex = fromIndex - boards.length;
-                          const sharedToIndex = toIndex - boards.length;
-                          
-                          // Update the shared boards array
-                          const newSharedBoards = [...sharedBoards];
-                          const [movedBoard] = newSharedBoards.splice(sharedFromIndex, 1);
-                          newSharedBoards.splice(sharedToIndex, 0, movedBoard);
-                          setSharedBoards(newSharedBoards);
-                          
-                          // Update the order
-                          const newSharedOrder = Array.from({ length: newSharedBoards.length }, (_, i) => i);
-                          setBoardOrder(prev => ({
-                            ...prev,
-                            shared: newSharedOrder
-                          }));
-
-                          // Update current board index if necessary
-                          if (currentBoardIndex === fromIndex) {
-                            setCurrentBoardIndex(toIndex);
-                          } else if (currentBoardIndex > fromIndex && currentBoardIndex <= toIndex) {
-                            setCurrentBoardIndex(currentBoardIndex - 1);
-                          } else if (currentBoardIndex < fromIndex && currentBoardIndex >= toIndex) {
-                            setCurrentBoardIndex(currentBoardIndex + 1);
-                          }
-                        } else {
-                          // Reordering owned boards
-                          // Update the boards array
-                          const newBoards = [...boards];
-                          const [movedBoard] = newBoards.splice(fromIndex, 1);
-                          newBoards.splice(toIndex, 0, movedBoard);
-                          setBoards(newBoards);
-                          
-                          // Update the order
-                          const newOwnedOrder = Array.from({ length: newBoards.length }, (_, i) => i);
-                          setBoardOrder(prev => ({
-                            ...prev,
-                            owned: newOwnedOrder
-                          }));
-
-                          // Update current board index if necessary
-                          if (currentBoardIndex === fromIndex) {
-                            setCurrentBoardIndex(toIndex);
-                          } else if (currentBoardIndex > fromIndex && currentBoardIndex <= toIndex) {
-                            setCurrentBoardIndex(currentBoardIndex - 1);
-                          } else if (currentBoardIndex < fromIndex && currentBoardIndex >= toIndex) {
-                            setCurrentBoardIndex(currentBoardIndex + 1);
-                          }
-                        }
-                      }
-                    }
-                  }}
+                  onDragLeave={handleDragLeave}
+                  onDrop={(e) => handleDrop(e, index)}
                 >
                   <div className="board-tab-content">
-                    <span>{board.title}</span>
-                    {isSharedBoard && board.ownerEmail && (
+                    <span className="board-title">{board.title}</span>
+                    {isSharedBoard && (
                       <span className="shared-label">
-                        {board.ownerUsername || board.ownerEmail}
+                        Właściciel: {board.ownerUsername || board.ownerEmail}
                       </span>
                     )}
                   </div>
@@ -1309,6 +1360,7 @@ const TaskBoard = ({ user, onLogout }) => {
                         className="leave-board-btn"
                         onClick={(e) => {
                           e.stopPropagation();
+                          e.preventDefault();
                           handleLeaveBoard(index);
                         }}
                       >
@@ -1319,7 +1371,9 @@ const TaskBoard = ({ user, onLogout }) => {
                         className="share-board-btn"
                         onClick={(e) => {
                           e.stopPropagation();
-                          setShowCollaboratorModal(true);
+                          if (currentBoardIndex < boards.length) {
+                            setShowCollaboratorModal(true);
+                          }
                         }}
                       >
                         Udostępnij
@@ -1345,295 +1399,234 @@ const TaskBoard = ({ user, onLogout }) => {
 
       <div className="main-content">
         {currentBoard && (
-          <div className="board">
-            {currentBoard.lists
-              .slice()
-              .sort((a, b) => (a.order || 0) - (b.order || 0))
-              .map((list, listIndex) => (
-                <div 
-                  className="list-table" 
-                  key={listIndex}
-                  draggable={!isSharedBoard || (isSharedBoard && currentBoard.collaborators.find(c => c.id === user.id)?.role !== 'observer')}
-                  onDragStart={(e) => {
-                    e.dataTransfer.setData('text/plain', listIndex.toString());
-                    e.currentTarget.classList.add('dragging');
-                  }}
-                  onDragEnd={(e) => {
-                    cleanupDragStates();
-                  }}
-                  onDragOver={(e) => {
-                    e.preventDefault();
-                    const taskData = e.dataTransfer.getData('application/json');
-                    if (taskData) {
-                      const { fromListIndex, fromTaskIndex } = JSON.parse(taskData);
-                      const rect = e.currentTarget.getBoundingClientRect();
-                      const y = e.clientY;
-                      const tasks = e.currentTarget.querySelectorAll('.task');
-                      
-                      // Remove existing indicators
-                      tasks.forEach(task => task.classList.remove('drag-over-top', 'drag-over-bottom'));
-                      
-                      // Find the task under the cursor
-                      let targetTask = null;
-                      let targetIndex = -1;
-                      
-                      tasks.forEach((task, index) => {
-                        const taskRect = task.getBoundingClientRect();
-                        if (y >= taskRect.top && y <= taskRect.bottom) {
-                          targetTask = task;
-                          targetIndex = index;
-                        }
-                      });
-                      
-                      if (targetTask) {
-                        const taskRect = targetTask.getBoundingClientRect();
-                        const threshold = taskRect.top + taskRect.height / 2;
-                        
-                        if (y < threshold) {
-                          targetTask.classList.add('drag-over-top');
-                        } else {
-                          targetTask.classList.add('drag-over-bottom');
-                        }
-                      }
-                    }
-                    e.currentTarget.classList.add('drag-over');
-                  }}
-                  onDragLeave={(e) => {
-                    e.preventDefault();
-                    const rect = e.currentTarget.getBoundingClientRect();
-                    const x = e.clientX;
-                    const y = e.clientY;
-                    if (x <= rect.left || x >= rect.right || y <= rect.top || y >= rect.bottom) {
-                      e.currentTarget.classList.remove('drag-over');
-                      e.currentTarget.querySelectorAll('.task').forEach(task => {
-                        task.classList.remove('drag-over-top', 'drag-over-bottom');
-                      });
-                    }
-                  }}
-                  onDrop={(e) => {
-                    e.preventDefault();
-                    cleanupDragStates();
-                    
-                    const taskData = e.dataTransfer.getData('application/json');
-                    if (taskData) {
-                      const { fromListIndex, fromTaskIndex } = JSON.parse(taskData);
-                      const y = e.clientY;
-                      const tasks = e.currentTarget.querySelectorAll('.task');
-                      
-                      // Find the task under the cursor
-                      let targetIndex = -1;
-                      let dropPosition = 'bottom';
-                      
-                      tasks.forEach((task, index) => {
-                        const taskRect = task.getBoundingClientRect();
-                        if (y >= taskRect.top && y <= taskRect.bottom) {
-                          targetIndex = index;
-                          const threshold = taskRect.top + taskRect.height / 2;
-                          dropPosition = y < threshold ? 'top' : 'bottom';
-                        }
-                      });
-                      
-                      if (targetIndex === -1) {
-                        // Drop at the end of the list
-                        targetIndex = tasks.length;
-                      }
-                      
-                      // Adjust target index based on drop position
-                      if (dropPosition === 'bottom' && targetIndex < tasks.length) {
-                        targetIndex++;
-                      }
-                      
-                      // Only move if it's a different position
-                      if (fromListIndex !== listIndex || fromTaskIndex !== targetIndex) {
-                        moveTask(fromListIndex, listIndex, fromTaskIndex, targetIndex);
-                      }
-                    } else {
-                      const fromIndex = parseInt(e.dataTransfer.getData('text/plain'));
-                      const toIndex = listIndex;
-                      if (fromIndex !== toIndex) {
-                        moveList(fromIndex, toIndex);
-                      }
-                    }
-                  }}
-                >
-                  <div className="list-header">
-                    <input
-                      type="text"
-                      className="list-title-input"
-                      value={list.title}
-                      onChange={(e) => {
-                        const currentBoard = isSharedBoard ? sharedBoards[currentBoardIndex - boards.length] : boards[currentBoardIndex];
-                        const updatedBoard = {
-                          ...currentBoard,
-                          lists: currentBoard.lists.map((l, idx) =>
-                            idx === listIndex
-                              ? { ...l, title: e.target.value }
-                              : l
-                          )
-                        };
-                        syncBoardChanges(updatedBoard, isSharedBoard);
+          <div 
+            className="board" 
+            style={{
+              backgroundImage: currentBoard?.backgroundImage ? `url(${currentBoard.backgroundImage})` : 'none',
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              backgroundRepeat: 'no-repeat'
+            }}
+          >
+            <input
+              type="file"
+              ref={fileInputRef}
+              style={{ display: 'none' }}
+              accept="image/*"
+              onChange={handleFileSelect}
+            />
+            <div className="background-buttons">
+              <button 
+                className="background-image-btn"
+                onClick={handleBackgroundChange}
+                title="Change background image"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                  <circle cx="8.5" cy="8.5" r="1.5"/>
+                  <polyline points="21 15 16 10 5 21"/>
+                </svg>
+              </button>
+              <button 
+                className="reset-background-btn"
+                onClick={handleResetBackground}
+                title="Reset background"
+              >
+                ↺
+              </button>
+            </div>
+            {currentBoard.lists.map((list, listIndex) => (
+              <div 
+                className="list-table" 
+                key={listIndex}
+                draggable={!isSharedBoard || (isSharedBoard && currentBoard.collaborators.find(c => c.id === user.id)?.role !== 'observer')}
+                onDragStart={(e) => {
+                  e.dataTransfer.setData('text/plain', listIndex.toString());
+                  e.currentTarget.classList.add('dragging');
+                }}
+                onDragEnd={cleanupDragStates}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={(e) => handleDrop(e, listIndex)}
+              >
+                <div className="list-header">
+                  <input
+                    type="text"
+                    className="list-title-input"
+                    value={list.title}
+                    onChange={(e) => {
+                      const currentBoard = isSharedBoard ? sharedBoards[currentBoardIndex - boards.length] : boards[currentBoardIndex];
+                      const updatedBoard = {
+                        ...currentBoard,
+                        lists: currentBoard.lists.map((l, idx) =>
+                          idx === listIndex
+                            ? { ...l, title: e.target.value }
+                            : l
+                        )
+                      };
+                      syncBoardChanges(updatedBoard, isSharedBoard);
+                    }}
+                    maxLength="20"
+                    disabled={isSharedBoard && currentBoard.collaborators.find(c => c.id === user.id)?.role === 'observer'}
+                  />
+                  {(!isSharedBoard || (isSharedBoard && currentBoard.collaborators.find(c => c.id === user.id)?.role !== 'observer')) && (
+                    <div style={{ position: 'relative' }}>
+                      <button 
+                        className="list-menu-btn"
+                        onClick={(e) => handleContextMenu(listIndex, e)}
+                      >
+                        •••
+                      </button>
+                      {contextMenu.visible && contextMenu.listIndex === listIndex && (
+                        <div className="list-context-menu">
+                          <button 
+                            className="list-context-menu-item"
+                            onClick={() => {
+                              const currentBoard = isSharedBoard ? sharedBoards[currentBoardIndex - boards.length] : boards[currentBoardIndex];
+                              setNewListName(currentBoard.lists[listIndex].title);
+                              setCopyListModal({ visible: true, listIndex });
+                              setContextMenu({ listIndex: null, visible: false });
+                            }}
+                          >
+                            <span className="icon">⧉</span>
+                            Kopiuj
+                          </button>
+                          <button 
+                            className="list-context-menu-item delete"
+                            onClick={() => {
+                              removeList(listIndex);
+                              setContextMenu({ listIndex: null, visible: false });
+                            }}
+                          >
+                            <span className="icon">×</span>
+                            Usuń
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+                <ul className="task-list">
+                  {list.tasks.map((task, taskIndex) => (
+                    <li 
+                      key={taskIndex} 
+                      className={`task ${task.completed ? 'completed' : ''}`}
+                      draggable={!isSharedBoard || (isSharedBoard && currentBoard.collaborators.find(c => c.id === user.id)?.role !== 'observer')}
+                      onDragStart={(e) => {
+                        e.dataTransfer.setData('application/json', JSON.stringify({
+                          fromListIndex: listIndex,
+                          fromTaskIndex: taskIndex
+                        }));
+                        e.currentTarget.classList.add('dragging');
                       }}
-                      maxLength="20"
-                      disabled={isSharedBoard && currentBoard.collaborators.find(c => c.id === user.id)?.role === 'observer'}
-                    />
-                    {(!isSharedBoard || (isSharedBoard && currentBoard.collaborators.find(c => c.id === user.id)?.role !== 'observer')) && (
-                      <div style={{ position: 'relative' }}>
-                        <button 
-                          className="list-menu-btn"
-                          onClick={(e) => handleContextMenu(listIndex, e)}
-                        >
-                          •••
-                        </button>
-                        {contextMenu.visible && contextMenu.listIndex === listIndex && (
-                          <div className="list-context-menu">
+                      onDragEnd={(e) => {
+                        cleanupDragStates();
+                      }}
+                      style={{ backgroundColor: task.color || '#ffffff' }}
+                      onClick={(e) => {
+                        if (!e.target.classList.contains('task-checkbox') && !e.target.classList.contains('edit-task-btn')) {
+                          handleCommentsClick(e, listIndex, taskIndex, task);
+                        }
+                      }}
+                    >
+                      <div className="task-title">
+                        <input
+                          type="checkbox"
+                          checked={task.completed}
+                          onChange={() => toggleTaskCompletion(listIndex, taskIndex)}
+                          disabled={isSharedBoard && currentBoard.collaborators.find(c => c.id === user.id)?.role === 'observer'}
+                          className="task-checkbox"
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                        {editingTaskId === task.id ? (
+                          <textarea
+                            className="task-title-edit"
+                            value={editingTitle}
+                            onChange={(e) => handleTextareaChange(e, setEditingTitle)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' && !e.shiftKey) {
+                                e.preventDefault();
+                                updateTaskTitle(listIndex, taskIndex, editingTitle);
+                                setEditingTaskId(null);
+                                e.stopPropagation();
+                              } else if (e.key === 'Escape') {
+                                setEditingTaskId(null);
+                                e.stopPropagation();
+                              }
+                            }}
+                            onBlur={() => {
+                              if (editingTitle.trim()) {
+                                updateTaskTitle(listIndex, taskIndex, editingTitle);
+                              }
+                              setEditingTaskId(null);
+                            }}
+                            onClick={(e) => e.stopPropagation()}
+                            autoFocus
+                            maxLength={60}
+                            rows={1}
+                            spellCheck="false"
+                            style={{ 
+                              resize: 'none',
+                              overflow: 'hidden',
+                              minHeight: '20px',
+                              height: 'auto'
+                            }}
+                          />
+                        ) : (
+                          <span style={{ 
+                            whiteSpace: 'pre-wrap',
+                            wordWrap: 'break-word',
+                            display: 'block',
+                            width: '100%',
+                            maxWidth: '220px',
+                            paddingRight: '2px',
+                            lineHeight: '1.4'
+                          }}>{task.text}</span>
+                        )}
+                        {(!isSharedBoard || (isSharedBoard && currentBoard.collaborators.find(c => c.id === user.id)?.role !== 'observer')) && (
+                          <div className="task-buttons">
                             <button 
-                              className="list-context-menu-item"
-                              onClick={() => {
-                                const currentBoard = isSharedBoard ? sharedBoards[currentBoardIndex - boards.length] : boards[currentBoardIndex];
-                                setNewListName(currentBoard.lists[listIndex].title);
-                                setCopyListModal({ visible: true, listIndex });
-                                setContextMenu({ listIndex: null, visible: false });
-                              }}
+                              className="edit-task-btn"
+                              onClick={(e) => handleEditClick(e, listIndex, taskIndex, task)}
                             >
-                              <span className="icon">⧉</span>
-                              Kopiuj
-                            </button>
-                            <button 
-                              className="list-context-menu-item delete"
-                              onClick={() => {
-                                removeList(listIndex);
-                                setContextMenu({ listIndex: null, visible: false });
-                              }}
-                            >
-                              <span className="icon">×</span>
-                              Usuń
+                              Edytuj
                             </button>
                           </div>
                         )}
                       </div>
-                    )}
-                  </div>
-                  <ul className="task-list">
-                    {list.tasks.map((task, taskIndex) => (
-                      <li 
-                        key={taskIndex} 
-                        className={`task ${task.completed ? 'completed' : ''}`}
-                        draggable={!isSharedBoard || (isSharedBoard && currentBoard.collaborators.find(c => c.id === user.id)?.role !== 'observer')}
-                        onDragStart={(e) => {
-                          e.dataTransfer.setData('application/json', JSON.stringify({
-                            fromListIndex: listIndex,
-                            fromTaskIndex: taskIndex
-                          }));
-                          e.currentTarget.classList.add('dragging');
-                        }}
-                        onDragEnd={(e) => {
-                          cleanupDragStates();
-                        }}
-                        style={{ backgroundColor: task.color || '#ffffff' }}
-                        onClick={(e) => {
-                          if (!e.target.classList.contains('task-checkbox') && !e.target.classList.contains('edit-task-btn')) {
-                            handleCommentsClick(e, listIndex, taskIndex, task);
+                    </li>
+                  ))}
+                  {addingTaskToList === listIndex ? (
+                    <div className="task-input-container" ref={taskInputRef}>
+                      <input
+                        className="task-input"
+                        placeholder="Nowe zadanie"
+                        value={newTaskText}
+                        onChange={(e) => setNewTaskText(e.target.value)}
+                        maxLength={31}
+                        autoFocus
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            handleAddTaskSubmit(listIndex);
+                          } else if (e.key === "Escape") {
+                            handleAddTaskCancel();
                           }
                         }}
+                      />
+                    </div>
+                  ) : (
+                    (!isSharedBoard || (isSharedBoard && currentBoard.collaborators.find(c => c.id === user.id)?.role !== 'observer')) && (
+                      <button
+                        className="add-task-btn"
+                        onClick={() => handleAddTaskClick(listIndex)}
                       >
-                        <div className="task-title">
-                          <input
-                            type="checkbox"
-                            checked={task.completed}
-                            onChange={() => toggleTaskCompletion(listIndex, taskIndex)}
-                            disabled={isSharedBoard && currentBoard.collaborators.find(c => c.id === user.id)?.role === 'observer'}
-                            className="task-checkbox"
-                            onClick={(e) => e.stopPropagation()}
-                          />
-                          {editingTaskId === task.id ? (
-                            <textarea
-                              className="task-title-edit"
-                              value={editingTitle}
-                              onChange={(e) => handleTextareaChange(e, setEditingTitle)}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter' && !e.shiftKey) {
-                                  e.preventDefault();
-                                  updateTaskTitle(listIndex, taskIndex, editingTitle);
-                                  setEditingTaskId(null);
-                                  e.stopPropagation();
-                                } else if (e.key === 'Escape') {
-                                  setEditingTaskId(null);
-                                  e.stopPropagation();
-                                }
-                              }}
-                              onBlur={() => {
-                                if (editingTitle.trim()) {
-                                  updateTaskTitle(listIndex, taskIndex, editingTitle);
-                                }
-                                setEditingTaskId(null);
-                              }}
-                              onClick={(e) => e.stopPropagation()}
-                              autoFocus
-                              maxLength={60}
-                              rows={1}
-                              spellCheck="false"
-                              style={{ 
-                                resize: 'none',
-                                overflow: 'hidden',
-                                minHeight: '20px',
-                                height: 'auto'
-                              }}
-                            />
-                          ) : (
-                            <span style={{ 
-                              whiteSpace: 'pre-wrap',
-                              wordWrap: 'break-word',
-                              display: 'block',
-                              width: '100%',
-                              maxWidth: '220px',
-                              paddingRight: '2px',
-                              lineHeight: '1.4'
-                            }}>{task.text}</span>
-                          )}
-                          {(!isSharedBoard || (isSharedBoard && currentBoard.collaborators.find(c => c.id === user.id)?.role !== 'observer')) && (
-                            <div className="task-buttons">
-                              <button 
-                                className="edit-task-btn"
-                                onClick={(e) => handleEditClick(e, listIndex, taskIndex, task)}
-                              >
-                                Edytuj
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                      </li>
-                    ))}
-                    {addingTaskToList === listIndex ? (
-                      <div className="task-input-container" ref={taskInputRef}>
-                        <input
-                          className="task-input"
-                          placeholder="Nowe zadanie"
-                          value={newTaskText}
-                          onChange={(e) => setNewTaskText(e.target.value)}
-                          maxLength={31}
-                          autoFocus
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") {
-                              handleAddTaskSubmit(listIndex);
-                            } else if (e.key === "Escape") {
-                              handleAddTaskCancel();
-                            }
-                          }}
-                        />
-                      </div>
-                    ) : (
-                      (!isSharedBoard || (isSharedBoard && currentBoard.collaborators.find(c => c.id === user.id)?.role !== 'observer')) && (
-                        <button
-                          className="add-task-btn"
-                          onClick={() => handleAddTaskClick(listIndex)}
-                        >
-                          <span>+</span> Dodaj zadanie
-                        </button>
-                      )
-                    )}
-                  </ul>
-                </div>
-              ))}
+                        <span>+</span> Dodaj zadanie
+                      </button>
+                    )
+                  )}
+                </ul>
+              </div>
+            ))}
             {(!isSharedBoard || (isSharedBoard && currentBoard.collaborators.find(c => c.id === user.id)?.role !== 'observer')) && (
               <div className="list-table">
                 <input
@@ -1668,7 +1661,7 @@ const TaskBoard = ({ user, onLogout }) => {
             >
               {!isCommentView ? (
                 <>
-                  {/* Edited Task Preview */}
+                  {/* Podgląd edytowanego zadania */}
                   <div className="edited-task-preview">
                     <div 
                       className="task" 
@@ -1718,7 +1711,7 @@ const TaskBoard = ({ user, onLogout }) => {
                     </div>
                   </div>
 
-                  {/* Color Picker Section */}
+                  {/* Sekcja wyboru koloru */}
                   {(!isSharedBoard || (isSharedBoard && currentBoard.collaborators.find(c => c.id === user.id)?.role !== 'observer')) && (
                     <div className="task-color-picker">
                       <label>Kolor zadania:</label>
@@ -1777,7 +1770,7 @@ const TaskBoard = ({ user, onLogout }) => {
                     </div>
                   )}
 
-                  {/* Task Buttons */}
+                  {/* Przyciski zadania */}
                   <div className="task-modal-buttons">
                     {(!isSharedBoard || (isSharedBoard && currentBoard.collaborators.find(c => c.id === user.id)?.role !== 'observer')) && (
                       <button 
@@ -1800,7 +1793,7 @@ const TaskBoard = ({ user, onLogout }) => {
                 </>
               ) : (
                 <>
-                  {/* Comments Section */}
+                  {/* Sekcja komentarzy */}
                   <div className="comments-section">
                     <div className="comments-header">
                       <h4>Komentarze</h4>
@@ -1866,9 +1859,9 @@ const TaskBoard = ({ user, onLogout }) => {
         )}
       </div>
 
-      {showCollaboratorModal && (
+      {showCollaboratorModal && currentBoardIndex < boards.length && (
         <CollaboratorModal
-          board={boards[currentBoardIndex]}
+          board={boards[currentBoardIndex] || { collaborators: [] }}
           onClose={() => setShowCollaboratorModal(false)}
           onAddCollaborator={handleAddCollaborator}
           onRemoveCollaborator={handleRemoveCollaborator}

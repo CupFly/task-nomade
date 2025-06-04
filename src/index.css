@@ -1,9 +1,9 @@
 /**
- * Global Styles
- * Base styling for the entire application
+ * Style globalne
+ * Podstawowe style dla całej aplikacji
  */
 
-/* Reset default styles */
+/* Resetowanie domyślnych stylów */
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
@@ -13,7 +13,7 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Code formatting */
+/* Formatowanie kodu */
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;

@@ -279,4 +279,15 @@
   .submit-button {
     padding: 14px;
   }
+}
+
+.app-title {
+  font-size: 32px;
+  font-weight: 700;
+  text-align: center;
+  margin-bottom: 24px;
+  background: linear-gradient(135deg, #8a4aff 0%, #5A00FF 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  letter-spacing: 1px;
 } 
