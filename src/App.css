@@ -221,7 +221,7 @@ body {
   display: flex;
   flex-direction: column;
   height: fit-content;
-  max-height: calc(100vh - 160px);
+  max-height: calc(100vh - 300px);
   min-height: 100px;
   flex-shrink: 0;
   margin: 4px;
@@ -299,7 +299,7 @@ body {
   overflow-y: auto;
   flex: 1;
   opacity: 1 !important;
-  max-height: calc(100vh - 160px);
+  max-height: calc(100vh - 300px);
   min-height: 0;
 }
 
