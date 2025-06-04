@@ -212,7 +212,7 @@ body {
   width: 320px;
   min-width: 320px;
   background: var(--background-light);
-  border-radius: 8px;
+  border-radius: 10px;
   box-shadow: var(--shadow-md);
   padding: 0;
   color: var(--text-primary);
@@ -325,7 +325,7 @@ body {
   background: var(--task-background);
   padding: 12px;
   margin: 4px 8px;
-  border-radius: 6px;
+  border-radius: 10px;
   box-shadow: var(--shadow-sm);
   display: flex;
   flex-direction: column;
