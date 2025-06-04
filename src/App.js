@@ -30,6 +30,7 @@ const TaskBoard = ({ user, onLogout }) => {
   const fileInputRef = useRef(null);
   const [users] = useState(() => JSON.parse(localStorage.getItem('users') || '[]'));
   const [boardEditPanel, setBoardEditPanel] = useState({ visible: false, boardIndex: null });
+  const [showNewBoardPanel, setShowNewBoardPanel] = useState(false);
 
   const autoResizeTextarea = (element) => {
     if (element) {
@@ -1347,12 +1348,19 @@ const TaskBoard = ({ user, onLogout }) => {
         </div>
         <div className="boards-navigation">
           <div className="board-tabs">
-            {getOrderedBoards().map((board, index) => {
-              if (!board) return null;
-              const isSharedBoard = index >= boards.length;
-              return (
+            <div className="board-tabs-section">
+              <div className="board-category">
+                <span>Twoje tablice</span>
+                <button
+                  className="add-board-btn"
+                  onClick={() => setShowNewBoardPanel(true)}
+                >
+                  +
+                </button>
+              </div>
+              {boards.map((board, index) => (
                 <div
-                  key={isSharedBoard ? `shared_${board.title}` : `owned_${board.title}`}
+                  key={`owned_${board.title}`}
                   className={`board-tab ${index === currentBoardIndex ? 'active' : ''}`}
                   onClick={() => setCurrentBoardIndex(index)}
                   draggable={true}
@@ -1360,9 +1368,7 @@ const TaskBoard = ({ user, onLogout }) => {
                     e.dataTransfer.setData('text/plain', index.toString());
                     e.currentTarget.classList.add('dragging');
                   }}
-                  onDragEnd={(e) => {
-                    cleanupDragStates();
-                  }}
+                  onDragEnd={cleanupDragStates}
                   onDragOver={(e) => {
                     e.preventDefault();
                     e.currentTarget.classList.add('drag-over');
@@ -1382,11 +1388,6 @@ const TaskBoard = ({ user, onLogout }) => {
                       <div className="background-icon" />
                     )}
                     <span className="board-title">{board.title}</span>
-                    {isSharedBoard && (
-                      <span className="shared-label">
-                        Właściciel: {board.ownerUsername || board.ownerEmail}
-                      </span>
-                    )}
                   </div>
                   <div className="board-actions">
                     <button 
@@ -1400,18 +1401,64 @@ const TaskBoard = ({ user, onLogout }) => {
                     </button>
                   </div>
                 </div>
-              );
-            })}
-            <div className="new-board-form">
-              <input
-                type="text"
-                placeholder="Nowa tablica"
-                value={newBoardTitle}
-                onChange={(e) => setNewBoardTitle(e.target.value)}
-                maxLength="30"
-              />
-              <button onClick={addBoard}>+</button>
+              ))}
             </div>
+
+            {sharedBoards.length > 0 && (
+              <div className="board-tabs-section">
+                <div className="board-category">Udostępnione tobie</div>
+                {sharedBoards.map((board, index) => {
+                  const boardIndex = index + boards.length;
+                  return (
+                    <div
+                      key={`shared_${board.title}`}
+                      className={`board-tab ${boardIndex === currentBoardIndex ? 'active' : ''}`}
+                      onClick={() => setCurrentBoardIndex(boardIndex)}
+                      draggable={true}
+                      onDragStart={(e) => {
+                        e.dataTransfer.setData('text/plain', boardIndex.toString());
+                        e.currentTarget.classList.add('dragging');
+                      }}
+                      onDragEnd={cleanupDragStates}
+                      onDragOver={(e) => {
+                        e.preventDefault();
+                        e.currentTarget.classList.add('drag-over');
+                      }}
+                      onDragLeave={handleDragLeave}
+                      onDrop={(e) => handleDrop(e, boardIndex)}
+                    >
+                      <div className="board-tab-content">
+                        {board.backgroundImage ? (
+                          <div 
+                            className="background-icon"
+                            style={{
+                              backgroundImage: `url(${board.backgroundImage})`
+                            }}
+                          />
+                        ) : (
+                          <div className="background-icon" />
+                        )}
+                        <span className="board-title">{board.title}</span>
+                        <span className="shared-label">
+                          {board.ownerUsername || board.ownerEmail}
+                        </span>
+                      </div>
+                      <div className="board-actions">
+                        <button 
+                          className="board-menu-btn"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleBoardEditClick(boardIndex, e);
+                          }}
+                        >
+                          •••
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -1996,6 +2043,61 @@ const TaskBoard = ({ user, onLogout }) => {
                   Usuń tablicę
                 </button>
               )}
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* New Board Panel */}
+      {showNewBoardPanel && (
+        <>
+          <div className="board-edit-overlay" onClick={() => setShowNewBoardPanel(false)} />
+          <div className="new-board-panel">
+            <div className="new-board-panel-header">
+              <h3>Nowa tablica</h3>
+              <button 
+                className="new-board-panel-close"
+                onClick={() => setShowNewBoardPanel(false)}
+              >
+                ✕
+              </button>
+            </div>
+            
+            <div className="new-board-panel-content">
+              <input
+                type="text"
+                className="new-board-input"
+                placeholder="Nazwa tablicy"
+                value={newBoardTitle}
+                onChange={(e) => setNewBoardTitle(e.target.value)}
+                maxLength="30"
+                autoFocus
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && newBoardTitle.trim()) {
+                    addBoard();
+                    setShowNewBoardPanel(false);
+                  } else if (e.key === 'Escape') {
+                    setShowNewBoardPanel(false);
+                  }
+                }}
+              />
+            </div>
+
+            <div className="new-board-panel-footer">
+              <button onClick={() => setShowNewBoardPanel(false)}>
+                Anuluj
+              </button>
+              <button 
+                className="primary"
+                onClick={() => {
+                  if (newBoardTitle.trim()) {
+                    addBoard();
+                    setShowNewBoardPanel(false);
+                  }
+                }}
+              >
+                Utwórz
+              </button>
             </div>
           </div>
         </>
