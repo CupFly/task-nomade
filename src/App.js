@@ -1814,7 +1814,7 @@ const TaskBoard = ({ user, onLogout }) => {
                     setIsNewList(true);
                   }}
                 >
-                  <span>+</span> Dodaj nową listę
+                  <span>╋</span> Dodaj nową listę
                 </button>
               </div>
             )}
