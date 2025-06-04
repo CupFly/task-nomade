@@ -1190,29 +1190,30 @@ const TaskBoard = ({ user, onLogout }) => {
 
   // Add background image state
   const handleBackgroundChange = () => {
+    // Only allow background changes for owned boards
+    if (isSharedBoard) return;
     fileInputRef.current?.click();
   };
 
   const handleResetBackground = () => {
+    // Only allow background reset for owned boards
+    if (isSharedBoard) return;
+    
     const updatedBoard = {
       ...currentBoard,
       backgroundImage: null
     };
     
-    if (isSharedBoard) {
-      const newSharedBoards = sharedBoards.map(board =>
-        board.title === currentBoard.title ? updatedBoard : board
-      );
-      setSharedBoards(newSharedBoards);
-    } else {
-      const newBoards = boards.map((board, index) =>
-        index === currentBoardIndex ? updatedBoard : board
-      );
-      setBoards(newBoards);
-    }
+    const newBoards = boards.map((board, index) =>
+      index === currentBoardIndex ? updatedBoard : board
+    );
+    setBoards(newBoards);
   };
 
   const handleFileSelect = (e) => {
+    // Only allow file selection for owned boards
+    if (isSharedBoard) return;
+    
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
@@ -1224,17 +1225,10 @@ const TaskBoard = ({ user, onLogout }) => {
             backgroundImage: imageUrl
           };
           
-          if (isSharedBoard) {
-            const newSharedBoards = sharedBoards.map(board =>
-              board.title === currentBoard.title ? updatedBoard : board
-            );
-            setSharedBoards(newSharedBoards);
-          } else {
-            const newBoards = boards.map((board, index) =>
-              index === currentBoardIndex ? updatedBoard : board
-            );
-            setBoards(newBoards);
-          }
+          const newBoards = boards.map((board, index) =>
+            index === currentBoardIndex ? updatedBoard : board
+          );
+          setBoards(newBoards);
         }
       };
       reader.readAsDataURL(file);
@@ -1325,27 +1319,29 @@ const TaskBoard = ({ user, onLogout }) => {
   return (
     <div className="app-container" key={forceUpdate}>
       <div className="sidebar">
-        <div 
-          className="header clickable"
+        <div className="app-header">
+          <div className="app-title">Task Nomade</div>
+        </div>
+        
+        <button 
+          className="profile-button"
           onClick={() => navigate('/profile')}
         >
-          <div className="app-title">Task Nomade</div>
-          <div className="header-content">
+          <div className="profile-info">
             <div 
               className="profile-avatar small"
               style={{
                 backgroundImage: user.profilePicture ? `url(${user.profilePicture})` : 'none',
                 backgroundSize: 'cover',
-                backgroundPosition: 'center',
-                fontSize: 0,
-                pointerEvents: 'none'
+                backgroundPosition: 'center'
               }}
             >
               {!user.profilePicture && (user.username ? user.username[0].toUpperCase() : user.email[0].toUpperCase())}
             </div>
-            <h1>Witaj, {user.username || user.email}</h1>
+            <h1>{user.username || user.email}</h1>
           </div>
-        </div>
+        </button>
+
         <div className="boards-navigation">
           <div className="board-tabs">
             <div className="board-tabs-section">
@@ -1977,39 +1973,42 @@ const TaskBoard = ({ user, onLogout }) => {
               </button>
             </div>
 
-            <div className="board-edit-section">
-              <h4>Tło tablicy</h4>
-              <div 
-                className="board-background-preview"
-                style={{
-                  backgroundImage: allBoards[boardEditPanel.boardIndex]?.backgroundImage 
-                    ? `url(${allBoards[boardEditPanel.boardIndex].backgroundImage})`
-                    : null
-                }}
-              >
-                {!allBoards[boardEditPanel.boardIndex]?.backgroundImage && 'Domyślne tło'}
+            {/* Only show background section for owned boards */}
+            {boardEditPanel.boardIndex < boards.length && (
+              <div className="board-edit-section">
+                <h4>Tło tablicy</h4>
+                <div 
+                  className="board-background-preview"
+                  style={{
+                    backgroundImage: allBoards[boardEditPanel.boardIndex]?.backgroundImage 
+                      ? `url(${allBoards[boardEditPanel.boardIndex].backgroundImage})`
+                      : null
+                  }}
+                >
+                  {!allBoards[boardEditPanel.boardIndex]?.backgroundImage && 'Domyślne tło'}
+                </div>
+                <div className="board-background-actions">
+                  <button onClick={() => {
+                    handleCloseBoardEdit();
+                    handleBackgroundChange();
+                  }}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                      <circle cx="8.5" cy="8.5" r="1.5"/>
+                      <polyline points="21 15 16 10 5 21"/>
+                    </svg>
+                    Zmień
+                  </button>
+                  <button onClick={() => {
+                    handleResetBackground();
+                    handleCloseBoardEdit();
+                  }}>
+                    <span style={{ fontSize: '16px' }}>↺</span>
+                    Reset
+                  </button>
+                </div>
               </div>
-              <div className="board-background-actions">
-                <button onClick={() => {
-                  handleCloseBoardEdit();
-                  handleBackgroundChange();
-                }}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-                    <circle cx="8.5" cy="8.5" r="1.5"/>
-                    <polyline points="21 15 16 10 5 21"/>
-                  </svg>
-                  Zmień
-                </button>
-                <button onClick={() => {
-                  handleResetBackground();
-                  handleCloseBoardEdit();
-                }}>
-                  <span style={{ fontSize: '16px' }}>↺</span>
-                  Reset
-                </button>
-              </div>
-            </div>
+            )}
 
             <div className="board-edit-panel-footer">
               {boardEditPanel.boardIndex < boards.length && (

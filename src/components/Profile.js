@@ -315,11 +315,11 @@ const Profile = ({ user, onLogout }) => {
         </div>
         
         <div className="profile-section">
-          <h2>Informacje o koncie</h2>
-          <div className="profile-info">
-            <div className="info-item" onClick={() => setShowUsernameForm(!showUsernameForm)}>
-              <label>Nazwa użytkownika:</label>
-              <span>{user.username || 'Nie ustawiono'}</span>
+          <h2 className="profile-title">Informacje o koncie</h2>
+          <ul className="profile-list">
+            <li className="profile-list-item">
+              <span className="label">Nazwa użytkownika</span>
+              <span className="value">{user.username || 'Nie ustawiono'}</span>
               <button 
                 className="edit-button"
                 onClick={(e) => {
@@ -329,9 +329,9 @@ const Profile = ({ user, onLogout }) => {
               >
                 {showUsernameForm ? 'Anuluj' : 'Zmień'}
               </button>
-            </div>
+            </li>
             {showUsernameForm && (
-              <div className={`edit-form ${!showUsernameForm ? 'hidden' : ''}`}>
+              <div className="edit-form">
                 <input
                   type="text"
                   placeholder="Nowa nazwa użytkownika"
@@ -359,17 +359,6 @@ const Profile = ({ user, onLogout }) => {
                 {usernameError && <div className="error-message">{usernameError}</div>}
                 <div className="form-buttons">
                   <button 
-                    className="cancel-button"
-                    onClick={() => {
-                      setShowUsernameForm(false);
-                      setNewUsername('');
-                      setPassword('');
-                      setUsernameError('');
-                    }}
-                  >
-                    Anuluj
-                  </button>
-                  <button 
                     className="save-button"
                     onClick={handleUsernameChange}
                   >
@@ -378,9 +367,10 @@ const Profile = ({ user, onLogout }) => {
                 </div>
               </div>
             )}
-            <div className="info-item" onClick={() => setShowEmailForm(!showEmailForm)}>
-              <label>Email:</label>
-              <span>{user.email}</span>
+            
+            <li className="profile-list-item">
+              <span className="label">Email</span>
+              <span className="value">{user.email}</span>
               <button 
                 className="edit-button"
                 onClick={(e) => {
@@ -390,9 +380,9 @@ const Profile = ({ user, onLogout }) => {
               >
                 {showEmailForm ? 'Anuluj' : 'Zmień'}
               </button>
-            </div>
+            </li>
             {showEmailForm && (
-              <div className={`edit-form ${!showEmailForm ? 'hidden' : ''}`}>
+              <div className="edit-form">
                 <input
                   type="text"
                   placeholder="Nowy email"
@@ -418,12 +408,6 @@ const Profile = ({ user, onLogout }) => {
                 {emailError && <div className="error-message">{emailError}</div>}
                 <div className="form-buttons">
                   <button 
-                    className="cancel-button"
-                    onClick={handleCancel}
-                  >
-                    Anuluj
-                  </button>
-                  <button 
                     className="save-button"
                     onClick={handleEmailChange}
                   >
@@ -432,13 +416,10 @@ const Profile = ({ user, onLogout }) => {
                 </div>
               </div>
             )}
-            <div className="info-item">
-              <label>ID użytkownika:</label>
-              <span>{user.id}</span>
-            </div>
-            <div className="info-item" onClick={() => setShowPasswordForm(!showPasswordForm)}>
-              <label>Hasło:</label>
-              <span>••••••••</span>
+            
+            <li className="profile-list-item">
+              <span className="label">Hasło</span>
+              <span className="value">••••••••</span>
               <button 
                 className="edit-button"
                 onClick={(e) => {
@@ -448,9 +429,9 @@ const Profile = ({ user, onLogout }) => {
               >
                 {showPasswordForm ? 'Anuluj' : 'Zmień'}
               </button>
-            </div>
+            </li>
             {showPasswordForm && (
-              <div className={`edit-form ${!showPasswordForm ? 'hidden' : ''}`}>
+              <div className="edit-form">
                 <div className="password-input-container">
                   <input
                     type={showPasswords.currentPassword ? "text" : "password"}
@@ -502,12 +483,6 @@ const Profile = ({ user, onLogout }) => {
                 {passwordError && <div className="error-message">{passwordError}</div>}
                 <div className="form-buttons">
                   <button 
-                    className="cancel-button"
-                    onClick={handlePasswordCancel}
-                  >
-                    Anuluj
-                  </button>
-                  <button 
                     className="save-button"
                     onClick={handlePasswordChange}
                   >
@@ -516,7 +491,7 @@ const Profile = ({ user, onLogout }) => {
                 </div>
               </div>
             )}
-          </div>
+          </ul>
         </div>
 
         <div className="profile-section danger-zone">
@@ -545,16 +520,6 @@ const Profile = ({ user, onLogout }) => {
                 />
                 {deleteError && <div className="error-message">{deleteError}</div>}
                 <div className="form-buttons">
-                  <button 
-                    className="cancel-button"
-                    onClick={() => {
-                      setShowDeleteForm(false);
-                      setDeletePassword('');
-                      setDeleteError('');
-                    }}
-                  >
-                    Anuluj
-                  </button>
                   <button 
                     className="confirm-delete-button"
                     onClick={handleDeleteAccount}
