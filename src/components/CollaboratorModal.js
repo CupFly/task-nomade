@@ -99,8 +99,6 @@ const CollaboratorModal = ({ board, onClose, onAddCollaborator, onRemoveCollabor
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
-          </div>
-          <div className="form-group">
             <select value={role} onChange={(e) => setRole(e.target.value)}>
               <option value="editor">Edytor</option>
               <option value="observer">Obserwator</option>

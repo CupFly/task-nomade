@@ -25,12 +25,14 @@ const TaskBoard = ({ user, onLogout }) => {
   const taskInputRef = useRef(null);
   const [boardContextMenu, setBoardContextMenu] = useState({ boardIndex: null, visible: false });
   const [listContextMenu, setListContextMenu] = useState({ listIndex: null, visible: false });
-  const [copyListModal, setCopyListModal] = useState({ visible: false, listIndex: null });
-  const [newListName, setNewListName] = useState('');
   const fileInputRef = useRef(null);
   const [users] = useState(() => JSON.parse(localStorage.getItem('users') || '[]'));
   const [boardEditPanel, setBoardEditPanel] = useState({ visible: false, boardIndex: null });
   const [showNewBoardPanel, setShowNewBoardPanel] = useState(false);
+  const newListInputRef = useRef(null);
+  const [editingListTitle, setEditingListTitle] = useState({ index: null, previousTitle: '' });
+  const [isNewList, setIsNewList] = useState(false);
+  const boardRef = useRef(null);
 
   const autoResizeTextarea = (element) => {
     if (element) {
@@ -529,16 +531,32 @@ const TaskBoard = ({ user, onLogout }) => {
       }
     }
 
-    const updatedBoard = {
-      ...currentBoard,
-      lists: currentBoard.lists.filter((_, idx) => idx !== listIndex)
-    };
-    syncBoardChanges(updatedBoard, isSharedBoard);
+    // Calculate the new scroll position before removing the list
+    if (boardRef.current) {
+      const board = boardRef.current;
+      const currentScroll = board.scrollLeft;
+      const listWidth = 320; // Standard list width
+      const margin = 8; // List margin
+      const newScrollPosition = Math.max(0, currentScroll - (listWidth + margin));
+      
+      // First update the scroll position smoothly
+      board.scrollTo({
+        left: newScrollPosition,
+        behavior: 'smooth'
+      });
+    }
+
+    // Remove the list after a longer delay to ensure smooth scrolling completes
+    setTimeout(() => {
+      const updatedBoard = {
+        ...currentBoard,
+        lists: currentBoard.lists.filter((_, idx) => idx !== listIndex)
+      };
+      syncBoardChanges(updatedBoard, isSharedBoard);
+    }, 300);
   };
 
-  const addList = () => {
-    if (!newListTitle.trim()) return;
-    
+  const addList = (initialTitle = '') => {
     const currentBoard = isSharedBoard ? sharedBoards[currentBoardIndex - boards.length] : boards[currentBoardIndex];
 
     // Check if user is an observer
@@ -551,7 +569,7 @@ const TaskBoard = ({ user, onLogout }) => {
 
     const updatedBoard = {
       ...currentBoard,
-      lists: [...currentBoard.lists, { title: newListTitle, tasks: [], order: currentBoard.lists.length }]
+      lists: [...currentBoard.lists, { title: initialTitle, tasks: [], order: currentBoard.lists.length }]
     };
     syncBoardChanges(updatedBoard, isSharedBoard);
     setNewListTitle("");
@@ -1000,18 +1018,6 @@ const TaskBoard = ({ user, onLogout }) => {
     const taskElement = e.currentTarget.closest('.task');
     const rect = taskElement.getBoundingClientRect();
     
-    const modalWidth = rect.width + 24;
-    const modalPadding = 16;
-    const taskPreviewPadding = 16;
-    const verticalOffset = 24;
-    
-    const leftPosition = rect.left - (modalWidth - rect.width) / 2 - 2;
-    
-    setModalPosition({
-      x: leftPosition - modalPadding,
-      y: rect.top - modalPadding - taskPreviewPadding + verticalOffset
-    });
-    
     setSelectedTask({ 
       listIndex, 
       taskIndex, 
@@ -1163,13 +1169,12 @@ const TaskBoard = ({ user, onLogout }) => {
     };
   }, []);
 
-  const copyList = (listIndex, newName) => {
+  const copyList = (listIndex) => {
     const currentBoard = isSharedBoard ? sharedBoards[currentBoardIndex - boards.length] : boards[currentBoardIndex];
     const listToCopy = currentBoard.lists[listIndex];
     
     const copiedList = {
       ...listToCopy,
-      title: newName,
       tasks: listToCopy.tasks.map(task => ({
         ...task,
         id: Date.now().toString() + Math.random().toString(36).substr(2, 9)
@@ -1186,28 +1191,75 @@ const TaskBoard = ({ user, onLogout }) => {
     };
 
     syncBoardChanges(updatedBoard, isSharedBoard);
+    
+    // Set the editing state before setting isNewList
+    setEditingListTitle({ index: listIndex + 1, previousTitle: listToCopy.title });
+    
+    // Use a small timeout to ensure the DOM has updated
+    setTimeout(() => {
+      setIsNewList(true);
+      if (newListInputRef.current) {
+        newListInputRef.current.focus();
+      }
+    }, 0);
   };
 
   // Add background image state
   const handleBackgroundChange = () => {
     // Only allow background changes for owned boards
     if (isSharedBoard) return;
-    fileInputRef.current?.click();
+    
+    // Store the selected board index for later use
+    const selectedBoardIndex = boardEditPanel.boardIndex;
+    const fileInput = fileInputRef.current;
+    
+    if (fileInput) {
+      fileInput.onchange = (e) => {
+        const file = e.target.files?.[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            const imageUrl = e.target?.result;
+            if (imageUrl) {
+              const updatedBoard = {
+                ...boards[selectedBoardIndex],
+                backgroundImage: imageUrl
+              };
+              
+              const newBoards = boards.map((board, index) =>
+                index === selectedBoardIndex ? updatedBoard : board
+              );
+              setBoards(newBoards);
+              localStorage.setItem(`boards_${user.id}`, JSON.stringify(newBoards));
+            }
+          };
+          reader.readAsDataURL(file);
+        }
+      };
+      fileInput.click();
+    }
   };
 
   const handleResetBackground = () => {
     // Only allow background reset for owned boards
     if (isSharedBoard) return;
     
+    const selectedBoardIndex = boardEditPanel.boardIndex;
     const updatedBoard = {
-      ...currentBoard,
+      ...boards[selectedBoardIndex],
       backgroundImage: null
     };
     
     const newBoards = boards.map((board, index) =>
-      index === currentBoardIndex ? updatedBoard : board
+      index === selectedBoardIndex ? updatedBoard : board
     );
     setBoards(newBoards);
+    localStorage.setItem(`boards_${user.id}`, JSON.stringify(newBoards));
+
+    // Reset the file input value
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   const handleFileSelect = (e) => {
@@ -1225,10 +1277,10 @@ const TaskBoard = ({ user, onLogout }) => {
             backgroundImage: imageUrl
           };
           
-          const newBoards = boards.map((board, index) =>
-            index === currentBoardIndex ? updatedBoard : board
-          );
-          setBoards(newBoards);
+            const newBoards = boards.map((board, index) =>
+              index === currentBoardIndex ? updatedBoard : board
+            );
+            setBoards(newBoards);
         }
       };
       reader.readAsDataURL(file);
@@ -1316,6 +1368,34 @@ const TaskBoard = ({ user, onLogout }) => {
     }
   };
 
+  // Add effect to focus on new list input
+  useEffect(() => {
+    if (newListInputRef.current) {
+      newListInputRef.current.focus();
+    }
+  }, [currentBoard?.lists.length]);
+
+  // Add effect to scroll to new list
+  useEffect(() => {
+    if ((isNewList || editingListTitle.index !== null) && boardRef.current) {
+      const board = boardRef.current;
+      const lists = board.querySelectorAll('.list-table');
+      const targetIndex = editingListTitle.index !== null ? editingListTitle.index : lists.length - 1;
+      const targetList = lists[targetIndex];
+      
+      if (targetList) {
+        const listRect = targetList.getBoundingClientRect();
+        const boardRect = board.getBoundingClientRect();
+        const scrollLeft = board.scrollLeft + listRect.left - boardRect.left - (boardRect.width - listRect.width) / 2;
+        
+        board.scrollTo({
+          left: scrollLeft,
+          behavior: 'smooth'
+        });
+      }
+    }
+  }, [isNewList, editingListTitle.index, currentBoard?.lists.length]);
+
   return (
     <div className="app-container" key={forceUpdate}>
       <div className="sidebar">
@@ -1386,15 +1466,15 @@ const TaskBoard = ({ user, onLogout }) => {
                     <span className="board-title">{board.title}</span>
                   </div>
                   <div className="board-actions">
-                    <button 
+                      <button
                       className="board-menu-btn"
-                      onClick={(e) => {
-                        e.stopPropagation();
+                        onClick={(e) => {
+                          e.stopPropagation();
                         handleBoardEditClick(index, e);
-                      }}
-                    >
+                        }}
+                      >
                       •••
-                    </button>
+                      </button>
                   </div>
                 </div>
               ))}
@@ -1417,12 +1497,12 @@ const TaskBoard = ({ user, onLogout }) => {
                       }}
                       onDragEnd={cleanupDragStates}
                       onDragOver={(e) => {
-                        e.preventDefault();
+                          e.preventDefault();
                         e.currentTarget.classList.add('drag-over');
                       }}
                       onDragLeave={handleDragLeave}
                       onDrop={(e) => handleDrop(e, boardIndex)}
-                    >
+                      >
                       <div className="board-tab-content">
                         {board.backgroundImage ? (
                           <div 
@@ -1431,7 +1511,7 @@ const TaskBoard = ({ user, onLogout }) => {
                               backgroundImage: `url(${board.backgroundImage})`
                             }}
                           />
-                        ) : (
+                    ) : (
                           <div className="background-icon" />
                         )}
                         <span className="board-title">{board.title}</span>
@@ -1440,20 +1520,20 @@ const TaskBoard = ({ user, onLogout }) => {
                         </span>
                       </div>
                       <div className="board-actions">
-                        <button 
+                      <button
                           className="board-menu-btn"
-                          onClick={(e) => {
-                            e.stopPropagation();
+                        onClick={(e) => {
+                          e.stopPropagation();
                             handleBoardEditClick(boardIndex, e);
-                          }}
-                        >
+                        }}
+                      >
                           •••
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+                      </button>
+                  </div>
+                </div>
+              );
+            })}
+            </div>
             )}
           </div>
         </div>
@@ -1463,6 +1543,7 @@ const TaskBoard = ({ user, onLogout }) => {
         {currentBoard && (
           <div 
             className="board" 
+            ref={boardRef}
             style={{
               backgroundImage: currentBoard?.backgroundImage ? `url(${currentBoard.backgroundImage})` : null
             }}
@@ -1505,8 +1586,63 @@ const TaskBoard = ({ user, onLogout }) => {
                       };
                       syncBoardChanges(updatedBoard, isSharedBoard);
                     }}
+                    onFocus={() => {
+                      setEditingListTitle({ 
+                        index: listIndex, 
+                        previousTitle: list.title 
+                      });
+                    }}
+                    onBlur={() => {
+                      if (!list.title.trim()) {
+                        if (isNewList && listIndex === currentBoard.lists.length - 1) {
+                          // Remove the new list if title is empty
+                          const currentBoard = isSharedBoard ? sharedBoards[currentBoardIndex - boards.length] : boards[currentBoardIndex];
+                          
+                          // Calculate the new scroll position before removing the list
+                          if (boardRef.current) {
+                            const board = boardRef.current;
+                            const currentScroll = board.scrollLeft;
+                            const listWidth = 320; // Standard list width
+                            const margin = 8; // List margin
+                            const newScrollPosition = Math.max(0, currentScroll - (listWidth + margin));
+                            
+                            // First update the scroll position smoothly
+                            board.scrollTo({
+                              left: newScrollPosition,
+                              behavior: 'smooth'
+                            });
+                          }
+
+                          // Remove the list after a longer delay to ensure smooth scrolling completes
+                          setTimeout(() => {
+                            const updatedBoard = {
+                              ...currentBoard,
+                              lists: currentBoard.lists.slice(0, -1)
+                            };
+                            syncBoardChanges(updatedBoard, isSharedBoard);
+                          }, 300);
+                          
+                          setIsNewList(false);
+                        } else if (editingListTitle.index === listIndex) {
+                          // Restore previous title for existing lists
+                          const currentBoard = isSharedBoard ? sharedBoards[currentBoardIndex - boards.length] : boards[currentBoardIndex];
+                          const updatedBoard = {
+                            ...currentBoard,
+                            lists: currentBoard.lists.map((l, idx) =>
+                              idx === listIndex
+                                ? { ...l, title: editingListTitle.previousTitle }
+                                : l
+                            )
+                          };
+                          syncBoardChanges(updatedBoard, isSharedBoard);
+                        }
+                      }
+                      setEditingListTitle({ index: null, previousTitle: '' });
+                      setIsNewList(false);
+                    }}
                     maxLength="20"
                     disabled={isSharedBoard && currentBoard.collaborators.find(c => c.id === user.id)?.role === 'observer'}
+                    ref={(isNewList && listIndex === currentBoard.lists.length - 1) || (!isNewList && editingListTitle.index === listIndex) ? newListInputRef : null}
                   />
                   {(!isSharedBoard || (isSharedBoard && currentBoard.collaborators.find(c => c.id === user.id)?.role !== 'observer')) && (
                     <div style={{ position: 'relative' }}>
@@ -1521,9 +1657,7 @@ const TaskBoard = ({ user, onLogout }) => {
                           <button 
                             className="list-context-menu-item"
                             onClick={() => {
-                              const currentBoard = isSharedBoard ? sharedBoards[currentBoardIndex - boards.length] : boards[currentBoardIndex];
-                              setNewListName(currentBoard.lists[listIndex].title);
-                              setCopyListModal({ visible: true, listIndex });
+                              copyList(listIndex);
                               setListContextMenu({ listIndex: null, visible: false });
                             }}
                           >
@@ -1667,16 +1801,20 @@ const TaskBoard = ({ user, onLogout }) => {
               </div>
             ))}
             {(!isSharedBoard || (isSharedBoard && currentBoard.collaborators.find(c => c.id === user.id)?.role !== 'observer')) && (
-              <div className="list-table">
-                <input
-                  className="list-input"
-                  placeholder="Nowa lista"
-                  value={newListTitle}
-                  onChange={(e) => setNewListTitle(e.target.value)}
-                  maxLength="20"
-                />
-                <button className="add-list-btn" onClick={addList}>
-                  Dodaj listę
+              <div className="list-table new-list">
+                <button 
+                  className="add-list-trigger" 
+                  onClick={() => {
+                    const currentBoard = isSharedBoard ? sharedBoards[currentBoardIndex - boards.length] : boards[currentBoardIndex];
+                    const updatedBoard = {
+                      ...currentBoard,
+                      lists: [...currentBoard.lists, { title: '', tasks: [], order: currentBoard.lists.length }]
+                    };
+                    syncBoardChanges(updatedBoard, isSharedBoard);
+                    setIsNewList(true);
+                  }}
+                >
+                  <span>+</span> Dodaj nową listę
                 </button>
               </div>
             )}
@@ -1689,14 +1827,13 @@ const TaskBoard = ({ user, onLogout }) => {
             onClick={() => setSelectedTask(null)}
           >
             <div 
-              className="task-modal" 
+              className={`task-modal ${isCommentView ? 'comments-view' : ''}`}
               onClick={(e) => e.stopPropagation()}
-              style={{
-                position: 'fixed',
+              style={!isCommentView ? {
                 top: modalPosition.y,
                 left: modalPosition.x,
                 width: selectedTask.taskRect.width + 24
-              }}
+              } : undefined}
             >
               {!isCommentView ? (
                 <>
@@ -1908,56 +2045,6 @@ const TaskBoard = ({ user, onLogout }) => {
         />
       )}
 
-      {copyListModal.visible && (
-        <>
-          <div className="copy-list-modal-overlay" onClick={() => setCopyListModal({ visible: false, listIndex: null })} />
-          <div className="copy-list-modal">
-            <h3>Nazwa nowej listy</h3>
-            <input
-              type="text"
-              value={newListName}
-              onChange={(e) => setNewListName(e.target.value)}
-              placeholder="Wprowadź nazwę listy"
-              maxLength="20"
-              autoFocus
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && newListName.trim()) {
-                  copyList(copyListModal.listIndex, newListName.trim());
-                  setCopyListModal({ visible: false, listIndex: null });
-                  setNewListName('');
-                } else if (e.key === 'Escape') {
-                  setCopyListModal({ visible: false, listIndex: null });
-                  setNewListName('');
-                }
-              }}
-            />
-            <div className="copy-list-modal-buttons">
-              <button 
-                className="cancel"
-                onClick={() => {
-                  setCopyListModal({ visible: false, listIndex: null });
-                  setNewListName('');
-                }}
-              >
-                Anuluj
-              </button>
-              <button
-                className="confirm"
-                onClick={() => {
-                  if (newListName.trim()) {
-                    copyList(copyListModal.listIndex, newListName.trim());
-                    setCopyListModal({ visible: false, listIndex: null });
-                    setNewListName('');
-                  }
-                }}
-              >
-                Kopiuj
-              </button>
-            </div>
-          </div>
-        </>
-      )}
-
       {/* Add the board edit panel */}
       {boardEditPanel.visible && (
         <>
@@ -1989,7 +2076,6 @@ const TaskBoard = ({ user, onLogout }) => {
                 </div>
                 <div className="board-background-actions">
                   <button onClick={() => {
-                    handleCloseBoardEdit();
                     handleBackgroundChange();
                   }}>
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -2001,7 +2087,6 @@ const TaskBoard = ({ user, onLogout }) => {
                   </button>
                   <button onClick={() => {
                     handleResetBackground();
-                    handleCloseBoardEdit();
                   }}>
                     <span style={{ fontSize: '16px' }}>↺</span>
                     Reset

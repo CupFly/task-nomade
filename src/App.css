@@ -131,38 +131,57 @@ body {
 .main-content {
   flex: 1;
   overflow: hidden;
-  padding: 24px;
   min-width: 0;
   display: flex;
   flex-direction: column;
   background: var(--background-dark);
   height: 100vh;
   position: relative;
+  padding-bottom: 16px; /* Add padding to show scrollbar */
 }
 
 .board {
+  flex: 1;
   display: flex;
-  gap: 20px;
-  flex-wrap: nowrap;
-  overflow-x: auto;
+  gap: 8px;
+  overflow-x: scroll !important; /* Force scroll */
   overflow-y: hidden;
-  align-items: flex-start;
-  position: absolute;
-  top: 0;
-  left: -60px;
-  right: -18px;
-  bottom: 0;
-  width: calc(100% + 48px);
-  border-radius: 8px;
-  transition: background-image 0.3s ease;
+  min-height: calc(100vh - 100px);
+  margin: -16px -16px 0 -16px;
+  padding: 30px 0px 20px 0px;
   background-attachment: fixed;
-  background-position: center;
   background-size: cover;
-  background-repeat: no-repeat;
-  padding: 24px;
-  background-image: var(--board-default-gradient);
-  transform: translate3d(0,0,0);
-  will-change: transform;
+  background-position: center;
+  scroll-behavior: smooth;
+  transition: scroll-behavior 0.3s ease;
+  scrollbar-width: auto; /* Firefox */
+  -ms-overflow-style: auto; /* IE and Edge */
+}
+
+/* Remove any global scrollbar styles that might be hiding it */
+* {
+  scrollbar-width: auto !important;
+  -ms-overflow-style: auto !important;
+}
+
+/* Ensure scrollbars are shown in webkit browsers */
+.board::-webkit-scrollbar {
+  -webkit-appearance: none !important;
+  width: auto !important;
+  height: 16px !important;
+  display: block !important;
+  background-color: var(--background-dark) !important;
+}
+
+.board::-webkit-scrollbar-thumb {
+  background-color: #666 !important;
+  border: 4px solid var(--background-dark) !important;
+  border-radius: 8px !important;
+  min-width: 50px !important;
+}
+
+.board::-webkit-scrollbar-track {
+  background-color: var(--background-dark) !important;
 }
 
 .board::before {
@@ -198,7 +217,7 @@ body {
   padding: 0;
   color: var(--text-primary);
   cursor: default;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition: all 0.3s ease;
   display: flex;
   flex-direction: column;
   height: fit-content;
@@ -206,9 +225,10 @@ body {
   min-height: 100px;
   flex-shrink: 0;
   margin: 4px;
-  opacity: 1 !important;
+  opacity: 1;
   position: relative;
   z-index: 1;
+  will-change: transform, opacity;
 }
 
 .list-table:hover {
@@ -277,8 +297,27 @@ body {
   padding: 8px 0px;
   margin: 0;
   overflow-y: auto;
-  flex: none;
+  flex: 1;
   opacity: 1 !important;
+  max-height: calc(100vh - 160px);
+  min-height: 0;
+}
+
+.task-list::-webkit-scrollbar {
+  width: 8px;
+}
+
+.task-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.task-list::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+
+.task-list::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
 }
 
 .task {
@@ -1086,21 +1125,24 @@ body {
 }
 
 .task-modal {
-  background: var(--background-light);
-  padding: 16px;
+  position: absolute;
+  background: var(--surface);
   border-radius: 8px;
-  position: fixed;
-  color: var(--text-primary);
+  padding: 16px;
   box-shadow: var(--shadow-lg);
+  min-width: 320px;
+  max-width: 400px;
   border: 1px solid var(--border-color);
-  z-index: 1002;
-  max-height: none;
-  overflow-y: visible;
-  display: flex;
-  flex-direction: column;
-  backdrop-filter: blur(12px);
-  animation: none;
-  transition: none;
+  z-index: 1000;
+}
+
+.task-modal.comments-view {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 400px;
+  max-width: 90vw;
 }
 
 .task-modal-header {
@@ -2063,114 +2105,6 @@ input {
 
 /* Task dragging styles */
 .task {
-  opacity: 1;
-  transition: opacity 0.2s ease, transform 0.2s ease;
-  transform: none;
-}
-
-.list-table .task-list {
-  transition: opacity 0.3s ease;
-}
-
-/* When a task is being dragged, keep the list opaque */
-.list-table .task.dragging {
-  opacity: 0.5;
-}
-
-/* When a list is being dragged, fade the entire list */
-.list-table[draggable="true"].dragging .task-list {
-  opacity: 0.5;
-}
-
-/* Base list styles */
-.list-table {
-  opacity: 1;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.list-table[draggable="true"]:hover {
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
-}
-
-/* List dragging styles */
-.list-table[draggable="true"].dragging {
-  opacity: 0.5;
-  transform: scale(1.02);
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
-}
-
-.list-table.drag-over {
-  border: 2px dashed #5A00FF;
-  transform: translateY(-2px);
-}
-
-/* Task styles */
-.task {
-  opacity: 1;
-  transition: opacity 0.2s ease, transform 0.2s ease;
-  transform: none;
-}
-
-/* Task dragging styles */
-.task.dragging {
-  opacity: 0.5 !important;
-  transform: scale(1.02);
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
-  cursor: grabbing;
-  z-index: 4;
-}
-
-/* Reset task styles after dragging */
-.task:not(.dragging) {
-  opacity: 1 !important;
-  transform: none;
-}
-
-/* Ensure list stays opaque when tasks are being dragged */
-.list-table:has(.task.dragging) {
-  opacity: 1;
-}
-
-/* Task drop indicators */
-.task.drag-over-top::before {
-  content: '';
-  position: absolute;
-  top: -4px;
-  left: 0;
-  right: 0;
-  height: 4px;
-  background: var(--primary);
-  border-radius: 2px;
-  box-shadow: 0 0 8px rgba(108, 99, 255, 0.5);
-  z-index: 3;
-}
-
-.task.drag-over-bottom::after {
-  content: '';
-  position: absolute;
-  bottom: -4px;
-  left: 0;
-  right: 0;
-  height: 4px;
-  background: var(--primary);
-  border-radius: 2px;
-  box-shadow: 0 0 8px rgba(108, 99, 255, 0.5);
-  z-index: 3;
-}
-
-/* Only fade the list when the list itself is being dragged */
-.list-table.dragging {
-  opacity: 0.5 !important;
-  transform: scale(1.02);
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
-}
-
-.list-table:not(.dragging) {
-  opacity: 1 !important;
-}
-
-/* Task dragging styles */
-.task {
   opacity: 1 !important;
   transition: transform 0.2s ease;
 }
@@ -2187,8 +2121,32 @@ input {
   opacity: 1 !important;
 }
 
-/* Ensure lists stay opaque during task dragging */
+/* List styles */
+.list-table {
+  opacity: 1;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+}
+
+/* List dragging styles */
+.list-table[draggable="true"].dragging {
+  opacity: 0.5 !important;
+  transform: scale(1.02) !important;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4) !important;
+}
+
+.list-table.drag-over {
+  background: rgba(0, 0, 0, 0.7);
+  transform: translateY(-2px);
+}
+
+/* Remove list effects during task dragging only */
 .list-table:has(.task.dragging) {
+  opacity: 1 !important;
+  transform: none !important;
+  box-shadow: var(--shadow-md) !important;
+}
+
+.list-table:has(.task.dragging) .task-list {
   opacity: 1 !important;
 }
 
@@ -2475,10 +2433,11 @@ input {
   justify-content: center;
   gap: 6px;
   height: 36px;
+  transition: all 0.2s ease;
 }
 
 .board-background-actions button:hover {
-  background: var(--background-dark);
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .board-edit-panel-footer {
@@ -2503,6 +2462,11 @@ input {
   cursor: pointer;
   height: 36px;
   font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.board-edit-panel-footer button:hover {
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .board-edit-panel-footer button.danger {
@@ -2510,8 +2474,8 @@ input {
   color: white;
 }
 
-.board-edit-panel-footer button:hover {
-  background: var(--background-dark);
+.board-edit-panel-footer button.danger:hover {
+  background: #FF4444;
 }
 
 .board-edit-overlay {
@@ -2699,4 +2663,120 @@ input {
 
 .new-board-input:focus {
   border-color: #2152D9;
+}
+
+.back-arrow {
+  position: fixed;
+  top: 2rem;
+  left: 2rem;
+  background: transparent;
+  border: none;
+  color: #9fadbc;
+  font-size: 24px;
+  cursor: pointer;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  padding-bottom: 4px;
+}
+
+/* New list styles */
+.list-table.new-list {
+  background: none;
+  min-width: 272px;
+  border: none;
+  padding: 4px;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.add-list-trigger {
+  background: rgba(255, 255, 255, 0.1);
+  color: #b6c2cf;
+  border: none;
+  padding: 10px;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  font-size: 14px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: background-color 0.2s ease, color 0.2s ease;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.add-list-trigger:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: var(--text-primary);
+}
+
+.add-list-trigger span {
+  font-size: 20px;
+  line-height: 1;
+}
+
+.new-list-buttons {
+  display: flex;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.add-list-btn {
+  background: transparent;
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: none;
+  flex: 1;
+}
+
+.add-list-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.cancel-list-btn {
+  background: transparent;
+  color: #b6c2cf;
+  border: none;
+  border-radius: 6px;
+  width: 28px;
+  height: 28px;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: none;
+}
+
+.cancel-list-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+}
+
+.list-input {
+  width: 100%;
+  padding: 8px 12px;
+  background: var(--surface);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  color: var(--text-primary);
+  font-size: 14px;
+  outline: none;
+  transition: none;
+}
+
+.list-input:focus {
+  border-color: var(--primary);
 }

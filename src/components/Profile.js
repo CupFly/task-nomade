@@ -20,15 +20,18 @@ const Profile = ({ user, onLogout }) => {
     confirmNewPassword: ''
   });
   const [showPasswords, setShowPasswords] = useState({
+    usernamePassword: false,
+    emailPassword: false,
     currentPassword: false,
     newPassword: false,
     confirmNewPassword: false,
-    emailPassword: false
+    deletePassword: false
   });
   const [showDeleteForm, setShowDeleteForm] = useState(false);
   const [deletePassword, setDeletePassword] = useState('');
   const [deleteError, setDeleteError] = useState('');
   const [profilePicture, setProfilePicture] = useState(user.profilePicture || null);
+  const [showDangerItem, setShowDangerItem] = useState(true);
 
   const handleUsernameChange = () => {
     setUsernameError('');
@@ -284,6 +287,12 @@ const Profile = ({ user, onLogout }) => {
 
   return (
     <div className="profile-page">
+      <button 
+        className="back-arrow"
+        onClick={() => navigate('/')}
+      >
+        ←
+      </button>
       <div className="profile-container">
         <div className="profile-header">
           <div 
@@ -321,7 +330,7 @@ const Profile = ({ user, onLogout }) => {
               <span className="label">Nazwa użytkownika</span>
               <span className="value">{user.username || 'Nie ustawiono'}</span>
               <button 
-                className="edit-button"
+                className={`edit-button ${showUsernameForm ? 'active' : ''}`}
                 onClick={(e) => {
                   e.stopPropagation();
                   setShowUsernameForm(!showUsernameForm);
@@ -343,7 +352,7 @@ const Profile = ({ user, onLogout }) => {
                 />
                 <div className="password-input-container">
                   <input
-                    type={showPasswords.emailPassword ? "text" : "password"}
+                    type={showPasswords.usernamePassword ? "text" : "password"}
                     placeholder="Potwierdź hasło"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
@@ -351,9 +360,9 @@ const Profile = ({ user, onLogout }) => {
                   <button
                     type="button"
                     className="show-password-button"
-                    onClick={() => togglePasswordVisibility('emailPassword')}
+                    onClick={() => togglePasswordVisibility('usernamePassword')}
                   >
-                    {showPasswords.emailPassword ? "👁️" : "👁️‍🗨️"}
+                    {showPasswords.usernamePassword ? "👁️" : "👁️‍🗨️"}
                   </button>
                 </div>
                 {usernameError && <div className="error-message">{usernameError}</div>}
@@ -372,7 +381,7 @@ const Profile = ({ user, onLogout }) => {
               <span className="label">Email</span>
               <span className="value">{user.email}</span>
               <button 
-                className="edit-button"
+                className={`edit-button ${showEmailForm ? 'active' : ''}`}
                 onClick={(e) => {
                   e.stopPropagation();
                   setShowEmailForm(!showEmailForm);
@@ -421,7 +430,7 @@ const Profile = ({ user, onLogout }) => {
               <span className="label">Hasło</span>
               <span className="value">••••••••</span>
               <button 
-                className="edit-button"
+                className={`edit-button ${showPasswordForm ? 'active' : ''}`}
                 onClick={(e) => {
                   e.stopPropagation();
                   setShowPasswordForm(!showPasswordForm);
@@ -497,27 +506,41 @@ const Profile = ({ user, onLogout }) => {
         <div className="profile-section danger-zone">
           <h2>Strefa niebezpieczna</h2>
           <div className="profile-info">
-            <div className="info-item danger">
-              <label>Usuń konto:</label>
-              <span>Ta operacja jest nieodwracalna</span>
-              <button 
-                className="delete-button"
-                onClick={() => setShowDeleteForm(!showDeleteForm)}
-              >
-                {showDeleteForm ? 'Anuluj' : 'Usuń konto'}
-              </button>
-            </div>
+            {showDangerItem && (
+              <div className="info-item danger">
+                <label>Usuń konto:</label>
+                <span>Ta operacja jest nieodwracalna</span>
+                <button 
+                  className="delete-button"
+                  onClick={() => {
+                    setShowDangerItem(false);
+                    setShowDeleteForm(!showDeleteForm);
+                  }}
+                >
+                  {showDeleteForm ? 'Anuluj' : 'Usuń konto'}
+                </button>
+              </div>
+            )}
             {showDeleteForm && (
               <div className="edit-form delete-form">
                 <p className="delete-warning">
                   Czy na pewno chcesz usunąć swoje konto? Ta operacja jest nieodwracalna i spowoduje utratę wszystkich danych.
                 </p>
-                <input
-                  type="password"
-                  placeholder="Potwierdź hasło"
-                  value={deletePassword}
-                  onChange={(e) => setDeletePassword(e.target.value)}
-                />
+                <div className="password-input-container">
+                  <input
+                    type={showPasswords.deletePassword ? "text" : "password"}
+                    placeholder="Potwierdź hasło"
+                    value={deletePassword}
+                    onChange={(e) => setDeletePassword(e.target.value)}
+                  />
+                  <button
+                    type="button"
+                    className="show-password-button"
+                    onClick={() => togglePasswordVisibility('deletePassword')}
+                  >
+                    {showPasswords.deletePassword ? "👁️" : "👁️‍🗨️"}
+                  </button>
+                </div>
                 {deleteError && <div className="error-message">{deleteError}</div>}
                 <div className="form-buttons">
                   <button 
@@ -534,16 +557,10 @@ const Profile = ({ user, onLogout }) => {
 
         <div className="profile-actions">
           <button 
-            className="return-button"
-            onClick={() => navigate('/')}
-          >
-            Powrót do strony głównej
-          </button>
-          <button 
             className="logout-button" 
             onClick={onLogout}
           >
-            Wyloguj się
+            ⤷ Wyloguj się
           </button>
         </div>
       </div>

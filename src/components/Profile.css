@@ -23,20 +23,6 @@
   z-index: 0;
 }
 
-.profile-page::after {
-  content: '';
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: 
-    radial-gradient(circle at 20% 30%, rgba(108, 99, 255, 0.1) 0%, transparent 50%),
-    radial-gradient(circle at 80% 70%, rgba(255, 107, 107, 0.1) 0%, transparent 50%);
-  pointer-events: none;
-  z-index: 0;
-}
-
 @keyframes rotate {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
@@ -109,18 +95,6 @@
   padding-bottom: 1.5rem;
   border-bottom: 1px solid #3d3d3d;
   position: relative;
-}
-
-.profile-header::after {
-  content: '';
-  position: absolute;
-  bottom: -1px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 100px;
-  height: 2px;
-  background: var(--gradient-1);
-  border-radius: 2px;
 }
 
 .profile-header-info {
@@ -216,17 +190,6 @@
   position: relative;
 }
 
-.profile-section::after {
-  content: '';
-  position: absolute;
-  bottom: -1px;
-  left: 0;
-  width: 50px;
-  height: 2px;
-  background: var(--gradient-1);
-  border-radius: 2px;
-}
-
 .profile-section h2 {
   color: #b6c2cf;
   margin: 0 0 1.5rem 0;
@@ -258,10 +221,10 @@
   align-items: center;
   gap: 12px;
   padding: 16px;
+  width: 100%;
   background: #2d2d2d;
   border-radius: 6px;
   border: 1px solid #3d3d3d;
-  cursor: pointer;
   margin-bottom: 0.5rem;
 }
 
@@ -306,7 +269,7 @@
 
 .edit-form input[type="text"],
 .edit-form input[type="password"] {
-  width: 100%;
+  width: 33%;
   padding: 8px 12px;
   border: 1px solid #3d3d3d;
   border-radius: 6px;
@@ -338,7 +301,7 @@
 
 .show-password-button {
   position: absolute;
-  right: 12px;
+  right: 64%;
   top: 50%;
   transform: translateY(-50%);
   background: none;
@@ -350,18 +313,11 @@
   align-items: center;
   justify-content: center;
   color: #9fadbc;
-  transition: all 0.3s ease;
-  border-radius: 4px;
-}
-
-.show-password-button:hover {
-  color: var(--text-primary);
-  background: rgba(255, 255, 255, 0.1);
 }
 
 .profile-actions {
   display: flex;
-  gap: 1rem;
+  justify-content: flex-end;
   margin-top: 2rem;
 }
 
@@ -376,6 +332,7 @@
   background: #2d2d2d;
   color: #b6c2cf;
   border: 1px solid #3d3d3d;
+  width: 20%;
 }
 
 .return-button:hover, .logout-button:hover {
@@ -490,6 +447,21 @@
   background: #FF4444;
 }
 
+.confirm-delete-button {
+  background: #CF3333;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-size: 14px;
+  cursor: pointer;
+  width: 40%;
+}
+
+.confirm-delete-button:hover {
+  background: #FF4444;
+}
+
 .delete-form {
   border: 1px solid #FF4444;
   background: rgba(255, 68, 68, 0.05);
@@ -516,14 +488,25 @@
   opacity: 0.2;
 }
 
-.delete-form input[type="password"] {
+.delete-form .password-input-container {
+  position: relative;
+  width: 33%;
+}
+
+.delete-form input[type="password"],
+.delete-form input[type="text"] {
   width: 100%;
   margin: 1rem 0;
   border: 2px solid var(--error);
 }
 
-.delete-form input[type="password"]:focus {
+.delete-form input[type="password"]:focus,
+.delete-form input[type="text"]:focus {
   box-shadow: var(--glow-error);
+}
+
+.delete-form .show-password-button {
+  right: -11%;
 }
 
 .delete-warning {
@@ -666,7 +649,8 @@
   margin-left: auto;
 }
 
-.profile-list-item:hover .edit-button {
+.profile-list-item:hover .edit-button,
+.profile-list-item .edit-button.active {
   opacity: 1;
 }
 
@@ -677,4 +661,30 @@
   margin-bottom: 16px;
   padding-bottom: 12px;
   border-bottom: 1px solid #3d3d3d;
+}
+
+.back-arrow {
+  position: fixed;
+  top: 2rem;
+  left: 2rem;
+  background: transparent;
+  border: none;
+  color: #9fadbc;
+  font-size: 24px;
+  cursor: pointer;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  line-height: 0;
+  padding-bottom: 5px;
+}
+
+.back-arrow:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #b6c2cf;
+  transform: translateX(-3px);
 } 
