@@ -19,13 +19,7 @@
   height: 200%;
   background: radial-gradient(circle, var(--primary) 0%, transparent 70%);
   opacity: 0.1;
-  animation: rotate 20s linear infinite;
   z-index: 0;
-}
-
-@keyframes rotate {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
 }
 
 /* Custom Scrollbar Styling */
@@ -64,7 +58,6 @@
   position: relative;
   z-index: 1;
   backdrop-filter: blur(10px);
-  animation: slideUp 0.5s cubic-bezier(0.4, 0, 0.2, 1);
   transform-style: preserve-3d;
   perspective: 1000px;
 }
@@ -186,7 +179,6 @@
   margin-bottom: 2rem;
   padding-bottom: 1.5rem;
   border-bottom: 1px solid #3d3d3d;
-  animation: fadeIn 0.5s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
 }
 
