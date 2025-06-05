@@ -33,6 +33,9 @@ const TaskBoard = ({ user, onLogout }) => {
   const [editingListTitle, setEditingListTitle] = useState({ index: null, previousTitle: '' });
   const [isNewList, setIsNewList] = useState(false);
   const boardRef = useRef(null);
+  const [editingDescription, setEditingDescription] = useState('');
+  const descriptionTextareaRef = useRef(null);
+  const [editingBoardTitle, setEditingBoardTitle] = useState("");
 
   const autoResizeTextarea = (element) => {
     if (element) {
@@ -356,17 +359,53 @@ const TaskBoard = ({ user, onLogout }) => {
               ...list, 
               tasks: [...list.tasks, { 
                 text: task,
+                description: '',
                 completed: false,
                 createdAt: Date.now(),
                 comments: [],
                 id: Date.now().toString(),
-                color: 'rgb(98, 100, 119)' // Default color for new tasks (red)
+                color: 'rgb(98, 100, 119)' // Default color for new tasks
               }] 
             }
           : list
       )
     };
     syncBoardChanges(updatedBoard, isSharedBoard);
+  };
+
+  const updateTaskDescription = (listIndex, taskIndex, newDescription) => {
+    const currentBoard = isSharedBoard ? sharedBoards[currentBoardIndex - boards.length] : boards[currentBoardIndex];
+
+    // Prevent observers from editing descriptions in shared boards
+    if (isSharedBoard) {
+      const userRole = currentBoard.collaborators.find(c => c.id === user.id)?.role;
+      if (userRole === 'observer') return;
+    }
+
+    const updatedBoard = {
+      ...currentBoard,
+      lists: currentBoard.lists.map((list, idx) =>
+        idx === listIndex
+          ? {
+              ...list,
+              tasks: list.tasks.map((task, tIdx) =>
+                tIdx === taskIndex
+                  ? { ...task, description: newDescription }
+                  : task
+              )
+            }
+          : list
+      )
+    };
+    syncBoardChanges(updatedBoard, isSharedBoard);
+
+    // Update modal view if the task is currently selected
+    if (selectedTask && selectedTask.listIndex === listIndex && selectedTask.taskIndex === taskIndex) {
+      setSelectedTask(prev => ({
+        ...prev,
+        task: { ...prev.task, description: newDescription }
+      }));
+    }
   };
 
   const addComment = (listIndex, taskIndex, comment) => {
@@ -945,6 +984,7 @@ const TaskBoard = ({ user, onLogout }) => {
         height: rect.height
       }
     });
+    setEditingDescription(task.description || '');
   };
 
   // Add effect to handle initial textarea height when editing starts
@@ -1032,15 +1072,26 @@ const TaskBoard = ({ user, onLogout }) => {
   const handleBoardEditClick = (boardIndex, e) => {
     e.preventDefault();
     e.stopPropagation();
+    const currentBoard = allBoards[boardIndex];
+    setEditingBoardTitle(currentBoard.title);
     setBoardEditPanel({
       visible: true,
       boardIndex
     });
   };
 
-  // Add handler to close the edit panel
+  // Add effect to update editing title when board changes
+  useEffect(() => {
+    if (boardEditPanel.visible && boardEditPanel.boardIndex !== null) {
+      const currentBoard = allBoards[boardEditPanel.boardIndex];
+      setEditingBoardTitle(currentBoard.title);
+    }
+  }, [boardEditPanel.visible, boardEditPanel.boardIndex, allBoards]);
+
+  // Handle closing the board edit panel
   const handleCloseBoardEdit = () => {
     setBoardEditPanel({ visible: false, boardIndex: null });
+    setEditingBoardTitle("");
   };
 
   // Update the click outside handler to include the edit panel
@@ -1048,7 +1099,7 @@ const TaskBoard = ({ user, onLogout }) => {
     const handleClickOutside = (event) => {
       // Only close if clicking the overlay
       if (event.target.classList.contains('board-edit-overlay')) {
-        setBoardEditPanel({ visible: false, boardIndex: null });
+        handleCloseBoardEdit();
       }
     };
 
@@ -1311,6 +1362,72 @@ const TaskBoard = ({ user, onLogout }) => {
       }
     }
   }, [isNewList, editingListTitle.index, currentBoard?.lists.length]);
+
+  // Add function to adjust textarea height
+  const adjustTextareaHeight = (textarea) => {
+    if (textarea) {
+      textarea.style.height = 'auto';
+      textarea.style.height = textarea.scrollHeight + 'px';
+    }
+  };
+
+  // Effect to adjust height when description changes or modal opens
+  useEffect(() => {
+    if (selectedTask && descriptionTextareaRef.current) {
+      adjustTextareaHeight(descriptionTextareaRef.current);
+    }
+  }, [selectedTask, editingDescription]);
+
+  const updateBoardTitle = (boardIndex, newTitle) => {
+    if (!newTitle.trim()) return;
+
+    if (boardIndex >= boards.length) {
+      // Updating shared board title
+      const sharedBoardIndex = boardIndex - boards.length;
+      const updatedBoard = {
+        ...sharedBoards[sharedBoardIndex],
+        title: newTitle,
+        lastModified: Date.now()
+      };
+      
+      // Update in shared boards
+      const newSharedBoards = sharedBoards.map((board, idx) =>
+        idx === sharedBoardIndex ? updatedBoard : board
+      );
+      setSharedBoards(newSharedBoards);
+      localStorage.setItem(`shared_boards_${user.id}`, JSON.stringify(newSharedBoards));
+
+      // Update in owner's boards
+      const ownerBoards = JSON.parse(localStorage.getItem(`boards_${updatedBoard.ownerId}`) || '[]');
+      const updatedOwnerBoards = ownerBoards.map(board =>
+        board.title === updatedBoard.title ? { ...board, title: newTitle } : board
+      );
+      localStorage.setItem(`boards_${updatedBoard.ownerId}`, JSON.stringify(updatedOwnerBoards));
+    } else {
+      // Updating owned board title
+      const updatedBoard = {
+        ...boards[boardIndex],
+        title: newTitle,
+        lastModified: Date.now()
+      };
+      
+      // Update in user's boards
+      const newBoards = boards.map((board, idx) =>
+        idx === boardIndex ? updatedBoard : board
+      );
+      setBoards(newBoards);
+      localStorage.setItem(`boards_${user.id}`, JSON.stringify(newBoards));
+
+      // Update in all collaborators' shared boards
+      updatedBoard.collaborators?.forEach(collaborator => {
+        const collaboratorBoards = JSON.parse(localStorage.getItem(`shared_boards_${collaborator.id}`) || '[]');
+        const updatedCollaboratorBoards = collaboratorBoards.map(board =>
+          board.title === boards[boardIndex].title ? { ...board, title: newTitle } : board
+        );
+        localStorage.setItem(`shared_boards_${collaborator.id}`, JSON.stringify(updatedCollaboratorBoards));
+      });
+    }
+  };
 
   return (
     <div className="app-container" key={forceUpdate}>
@@ -1863,8 +1980,11 @@ const TaskBoard = ({ user, onLogout }) => {
                 <>
                   {/* Sekcja komentarzy */}
                   <div className="comments-section">
-                    <div className="comments-header">
-                      <h4>Komentarze</h4>
+                    <div 
+                      className="comments-header"
+                      style={{ backgroundColor: selectedTask.task.color || '#626477' }}
+                    >
+                      <h4>{selectedTask.task.text}</h4>
                       <button 
                         className="close-comments-btn"
                         onClick={() => setSelectedTask(null)}
@@ -1872,53 +1992,78 @@ const TaskBoard = ({ user, onLogout }) => {
                         ✕
                       </button>
                     </div>
-                    <div className="comments-list">
-                      {selectedTask.task.comments?.map((comment) => (
-                        <div key={comment.id} className="comment">
-                          <div className="comment-header">
-                            <span className="comment-author">{comment.username || comment.userEmail}</span>
-                            <span className="comment-date">{formatDate(comment.createdAt)}</span>
-                            {(comment.userId === user.id || (!isSharedBoard || currentBoard.ownerId === user.id)) && (
-                              <button
-                                className="remove-comment-btn"
-                                onClick={() => removeComment(selectedTask.listIndex, selectedTask.taskIndex, comment.id)}
-                              >
-                                Usuń
-                              </button>
-                            )}
-                          </div>
-                          <div className="comment-text">{comment.text}</div>
-                        </div>
-                      ))}
-                    </div>
-                    {(!isSharedBoard || (isSharedBoard && currentBoard.collaborators.find(c => c.id === user.id)?.role !== 'observer')) && (
-                      <div className="comment-input-container">
-                        <input
-                          type="text"
-                          className="comment-input"
-                          placeholder="Dodaj komentarz..."
-                          value={commentInput}
-                          onChange={(e) => setCommentInput(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter" && commentInput.trim()) {
-                              addComment(selectedTask.listIndex, selectedTask.taskIndex, commentInput);
-                              setCommentInput('');
-                            }
+
+                    <div className="modal-content">
+                      <div className="task-description-container">
+                        <label className="task-description-label">Opis</label>
+                        <textarea
+                          ref={descriptionTextareaRef}
+                          className="task-description-edit"
+                          value={editingDescription}
+                          onChange={(e) => {
+                            setEditingDescription(e.target.value);
+                            adjustTextareaHeight(e.target);
                           }}
+                          onBlur={() => {
+                            updateTaskDescription(selectedTask.listIndex, selectedTask.taskIndex, editingDescription);
+                          }}
+                          placeholder="Add a description..."
+                          rows={1}
+                          disabled={isSharedBoard && currentBoard.collaborators.find(c => c.id === user.id)?.role === 'observer'}
                         />
-                        <button
-                          className="add-comment-btn"
-                          onClick={() => {
-                            if (commentInput.trim()) {
-                              addComment(selectedTask.listIndex, selectedTask.taskIndex, commentInput);
-                              setCommentInput('');
-                            }
-                          }}
-                        >
-                          Dodaj
-                        </button>
                       </div>
-                    )}
+
+                      <div className="comments-container">
+                        <label className="task-description-label">Komentarze</label>
+                        <div className="comments-list">
+                          {selectedTask.task.comments?.map((comment) => (
+                            <div key={comment.id} className="comment">
+                              <div className="comment-header">
+                                <span className="comment-author">{comment.username || comment.userEmail}</span>
+                                <span className="comment-date">{formatDate(comment.createdAt)}</span>
+                                {(comment.userId === user.id || (!isSharedBoard || currentBoard.ownerId === user.id)) && (
+                                  <button
+                                    className="remove-comment-btn"
+                                    onClick={() => removeComment(selectedTask.listIndex, selectedTask.taskIndex, comment.id)}
+                                  >
+                                    Usuń
+                                  </button>
+                                )}
+                              </div>
+                              <div className="comment-text">{comment.text}</div>
+                            </div>
+                          ))}
+                        </div>
+                        {(!isSharedBoard || (isSharedBoard && currentBoard.collaborators.find(c => c.id === user.id)?.role !== 'observer')) && (
+                          <div className="comment-input-container">
+                            <input
+                              type="text"
+                              className="comment-input"
+                              placeholder="Dodaj komentarz..."
+                              value={commentInput}
+                              onChange={(e) => setCommentInput(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter" && commentInput.trim()) {
+                                  addComment(selectedTask.listIndex, selectedTask.taskIndex, commentInput);
+                                  setCommentInput('');
+                                }
+                              }}
+                            />
+                            <button
+                              className="add-comment-btn"
+                              onClick={() => {
+                                if (commentInput.trim()) {
+                                  addComment(selectedTask.listIndex, selectedTask.taskIndex, commentInput);
+                                  setCommentInput('');
+                                }
+                              }}
+                            >
+                              Dodaj
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </>
               )}
@@ -1950,6 +2095,34 @@ const TaskBoard = ({ user, onLogout }) => {
               >
                 ✕
               </button>
+            </div>
+
+            <div className="board-edit-section">
+              <h4>Nazwa tablicy</h4>
+              <input
+                type="text"
+                className="board-title-edit"
+                value={editingBoardTitle}
+                onChange={(e) => setEditingBoardTitle(e.target.value)}
+                onBlur={() => {
+                  if (editingBoardTitle.trim() && editingBoardTitle !== allBoards[boardEditPanel.boardIndex].title) {
+                    updateBoardTitle(boardEditPanel.boardIndex, editingBoardTitle);
+                  } else {
+                    setEditingBoardTitle(allBoards[boardEditPanel.boardIndex].title);
+                  }
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && editingBoardTitle.trim()) {
+                    e.target.blur();
+                  } else if (e.key === 'Escape') {
+                    setEditingBoardTitle(allBoards[boardEditPanel.boardIndex].title);
+                    e.target.blur();
+                  }
+                }}
+                maxLength="30"
+                placeholder="Nazwa tablicy"
+                autoFocus
+              />
             </div>
 
             {/* Only show background section for owned boards */}
