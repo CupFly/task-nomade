@@ -619,90 +619,6 @@ const TaskBoard = ({ user, onLogout }) => {
     setNewBoardTitle("");
   };
 
-  // Store user's board order preferences
-  const [boardOrder, setBoardOrder] = useState(() => {
-    const savedOrder = localStorage.getItem(`board_order_${user.id}`);
-    return savedOrder ? JSON.parse(savedOrder) : {
-      owned: boards.map((_, index) => index),
-      shared: []
-    };
-  });
-
-  // Effect to update board order when boards change
-  useEffect(() => {
-    const newOrder = {
-      owned: Array.from({ length: boards.length }, (_, i) => i),
-      shared: Array.from({ length: sharedBoards.length }, (_, i) => i)
-    };
-    setBoardOrder(newOrder);
-  }, [boards.length, sharedBoards.length]);
-
-  // Effect to save board order
-  useEffect(() => {
-    if (boardOrder.owned.length > 0 || boardOrder.shared.length > 0) {
-      localStorage.setItem(`board_order_${user.id}`, JSON.stringify(boardOrder));
-    }
-  }, [boardOrder, user.id]);
-
-  const moveBoard = (fromIndex, toIndex) => {
-    // Determine if we're moving between owned and shared boards
-    const isFromShared = fromIndex >= boards.length;
-    const isToShared = toIndex >= boards.length;
-    
-    // Only allow reordering within the same section (owned or shared)
-    if (isFromShared === isToShared) {
-      if (isFromShared) {
-        // Reordering shared boards
-        const sharedFromIndex = fromIndex - boards.length;
-        const sharedToIndex = toIndex - boards.length;
-        
-        // Update the shared boards array
-        const newSharedBoards = [...sharedBoards];
-        const [movedBoard] = newSharedBoards.splice(sharedFromIndex, 1);
-        newSharedBoards.splice(sharedToIndex, 0, movedBoard);
-        setSharedBoards(newSharedBoards);
-        
-        // Update the order
-        const newSharedOrder = Array.from({ length: newSharedBoards.length }, (_, i) => i);
-        setBoardOrder(prev => ({
-          ...prev,
-          shared: newSharedOrder
-        }));
-
-        // Update current board index if necessary
-        if (currentBoardIndex === fromIndex) {
-          setCurrentBoardIndex(toIndex);
-        } else if (currentBoardIndex > fromIndex && currentBoardIndex <= toIndex) {
-          setCurrentBoardIndex(currentBoardIndex - 1);
-        } else if (currentBoardIndex < fromIndex && currentBoardIndex >= toIndex) {
-          setCurrentBoardIndex(currentBoardIndex + 1);
-        }
-      } else {
-        // Reordering owned boards
-        const newBoards = [...boards];
-        const [movedBoard] = newBoards.splice(fromIndex, 1);
-        newBoards.splice(toIndex, 0, movedBoard);
-        setBoards(newBoards);
-        
-        // Update the order
-        const newOwnedOrder = Array.from({ length: newBoards.length }, (_, i) => i);
-        setBoardOrder(prev => ({
-          ...prev,
-          owned: newOwnedOrder
-        }));
-
-        // Update current board index if necessary
-        if (currentBoardIndex === fromIndex) {
-          setCurrentBoardIndex(toIndex);
-        } else if (currentBoardIndex > fromIndex && currentBoardIndex <= toIndex) {
-          setCurrentBoardIndex(currentBoardIndex - 1);
-        } else if (currentBoardIndex < fromIndex && currentBoardIndex >= toIndex) {
-          setCurrentBoardIndex(currentBoardIndex + 1);
-        }
-      }
-    }
-  };
-
   // Get ordered boards
   const getOrderedBoards = () => {
     return [...boards, ...sharedBoards];
@@ -1439,18 +1355,6 @@ const TaskBoard = ({ user, onLogout }) => {
                   key={`owned_${board.title}`}
                   className={`board-tab ${index === currentBoardIndex ? 'active' : ''}`}
                   onClick={() => setCurrentBoardIndex(index)}
-                  draggable={true}
-                  onDragStart={(e) => {
-                    e.dataTransfer.setData('text/plain', index.toString());
-                    e.currentTarget.classList.add('dragging');
-                  }}
-                  onDragEnd={cleanupDragStates}
-                  onDragOver={(e) => {
-                    e.preventDefault();
-                    e.currentTarget.classList.add('drag-over');
-                  }}
-                  onDragLeave={handleDragLeave}
-                  onDrop={(e) => handleDrop(e, index)}
                 >
                   <div className="board-tab-content">
                     {board.backgroundImage ? (
@@ -1470,7 +1374,7 @@ const TaskBoard = ({ user, onLogout }) => {
                       className="board-menu-btn"
                         onClick={(e) => {
                           e.stopPropagation();
-                        handleBoardEditClick(index, e);
+                          handleBoardEditClick(index, e);
                         }}
                       >
                       •••
@@ -1490,19 +1394,7 @@ const TaskBoard = ({ user, onLogout }) => {
                       key={`shared_${board.title}`}
                       className={`board-tab ${boardIndex === currentBoardIndex ? 'active' : ''}`}
                       onClick={() => setCurrentBoardIndex(boardIndex)}
-                      draggable={true}
-                      onDragStart={(e) => {
-                        e.dataTransfer.setData('text/plain', boardIndex.toString());
-                        e.currentTarget.classList.add('dragging');
-                      }}
-                      onDragEnd={cleanupDragStates}
-                      onDragOver={(e) => {
-                          e.preventDefault();
-                        e.currentTarget.classList.add('drag-over');
-                      }}
-                      onDragLeave={handleDragLeave}
-                      onDrop={(e) => handleDrop(e, boardIndex)}
-                      >
+                    >
                       <div className="board-tab-content">
                         {board.backgroundImage ? (
                           <div 
@@ -1511,7 +1403,7 @@ const TaskBoard = ({ user, onLogout }) => {
                               backgroundImage: `url(${board.backgroundImage})`
                             }}
                           />
-                    ) : (
+                        ) : (
                           <div className="background-icon" />
                         )}
                         <span className="board-title">{board.title}</span>
@@ -1520,20 +1412,20 @@ const TaskBoard = ({ user, onLogout }) => {
                         </span>
                       </div>
                       <div className="board-actions">
-                      <button
+                        <button
                           className="board-menu-btn"
-                        onClick={(e) => {
-                          e.stopPropagation();
+                          onClick={(e) => {
+                            e.stopPropagation();
                             handleBoardEditClick(boardIndex, e);
-                        }}
-                      >
+                          }}
+                        >
                           •••
-                      </button>
-                  </div>
-                </div>
-              );
-            })}
-            </div>
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             )}
           </div>
         </div>
