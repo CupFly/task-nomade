@@ -933,8 +933,8 @@ body {
 
 .board-tab.dragging {
   opacity: 0.5;
-  transform: none;
-  box-shadow: none;
+  transform: scale(1.02) rotate(3deg) !important;
+  box-shadow: var(--shadow-lg) !important;
 }
 
 .board-tab.drag-over {
@@ -1115,9 +1115,9 @@ body {
 }
 
 .list-table.dragging {
-  opacity: 0.5;
-  transform: scale(1.02);
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
+  opacity: 0.5 !important;
+  transform: scale(1.02) rotate(3deg) !important;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4) !important;
 }
 
 .comment-count-btn {
@@ -1363,7 +1363,7 @@ body {
 
 .task.dragging {
   opacity: 0.5 !important;
-  transform: scale(1.02);
+  transform: scale(1.02) rotate(3deg) !important;
   box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
   cursor: grabbing;
   z-index: 4;
@@ -2112,7 +2112,7 @@ input {
 
 .task.dragging {
   opacity: 0.5 !important;
-  transform: scale(1.02);
+  transform: scale(1.02) rotate(3deg) !important;
   box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
   cursor: grabbing;
   z-index: 4;
@@ -2131,7 +2131,7 @@ input {
 /* List dragging styles */
 .list-table[draggable="true"].dragging {
   opacity: 0.5 !important;
-  transform: scale(1.02) !important;
+  transform: scale(1.02) rotate(3deg) !important;
   box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4) !important;
 }
 
