@@ -35,7 +35,6 @@ const TaskBoard = ({ user, onLogout }) => {
   const boardRef = useRef(null);
   const [editingDescription, setEditingDescription] = useState('');
   const descriptionTextareaRef = useRef(null);
-  const [editingBoardTitle, setEditingBoardTitle] = useState("");
 
   const autoResizeTextarea = (element) => {
     if (element) {
@@ -1072,26 +1071,15 @@ const TaskBoard = ({ user, onLogout }) => {
   const handleBoardEditClick = (boardIndex, e) => {
     e.preventDefault();
     e.stopPropagation();
-    const currentBoard = allBoards[boardIndex];
-    setEditingBoardTitle(currentBoard.title);
     setBoardEditPanel({
       visible: true,
       boardIndex
     });
   };
 
-  // Add effect to update editing title when board changes
-  useEffect(() => {
-    if (boardEditPanel.visible && boardEditPanel.boardIndex !== null) {
-      const currentBoard = allBoards[boardEditPanel.boardIndex];
-      setEditingBoardTitle(currentBoard.title);
-    }
-  }, [boardEditPanel.visible, boardEditPanel.boardIndex, allBoards]);
-
-  // Handle closing the board edit panel
+  // Add handler to close the edit panel
   const handleCloseBoardEdit = () => {
     setBoardEditPanel({ visible: false, boardIndex: null });
-    setEditingBoardTitle("");
   };
 
   // Update the click outside handler to include the edit panel
@@ -1099,7 +1087,7 @@ const TaskBoard = ({ user, onLogout }) => {
     const handleClickOutside = (event) => {
       // Only close if clicking the overlay
       if (event.target.classList.contains('board-edit-overlay')) {
-        handleCloseBoardEdit();
+        setBoardEditPanel({ visible: false, boardIndex: null });
       }
     };
 
@@ -1377,57 +1365,6 @@ const TaskBoard = ({ user, onLogout }) => {
       adjustTextareaHeight(descriptionTextareaRef.current);
     }
   }, [selectedTask, editingDescription]);
-
-  const updateBoardTitle = (boardIndex, newTitle) => {
-    if (!newTitle.trim()) return;
-
-    if (boardIndex >= boards.length) {
-      // Updating shared board title
-      const sharedBoardIndex = boardIndex - boards.length;
-      const updatedBoard = {
-        ...sharedBoards[sharedBoardIndex],
-        title: newTitle,
-        lastModified: Date.now()
-      };
-      
-      // Update in shared boards
-      const newSharedBoards = sharedBoards.map((board, idx) =>
-        idx === sharedBoardIndex ? updatedBoard : board
-      );
-      setSharedBoards(newSharedBoards);
-      localStorage.setItem(`shared_boards_${user.id}`, JSON.stringify(newSharedBoards));
-
-      // Update in owner's boards
-      const ownerBoards = JSON.parse(localStorage.getItem(`boards_${updatedBoard.ownerId}`) || '[]');
-      const updatedOwnerBoards = ownerBoards.map(board =>
-        board.title === updatedBoard.title ? { ...board, title: newTitle } : board
-      );
-      localStorage.setItem(`boards_${updatedBoard.ownerId}`, JSON.stringify(updatedOwnerBoards));
-    } else {
-      // Updating owned board title
-      const updatedBoard = {
-        ...boards[boardIndex],
-        title: newTitle,
-        lastModified: Date.now()
-      };
-      
-      // Update in user's boards
-      const newBoards = boards.map((board, idx) =>
-        idx === boardIndex ? updatedBoard : board
-      );
-      setBoards(newBoards);
-      localStorage.setItem(`boards_${user.id}`, JSON.stringify(newBoards));
-
-      // Update in all collaborators' shared boards
-      updatedBoard.collaborators?.forEach(collaborator => {
-        const collaboratorBoards = JSON.parse(localStorage.getItem(`shared_boards_${collaborator.id}`) || '[]');
-        const updatedCollaboratorBoards = collaboratorBoards.map(board =>
-          board.title === boards[boardIndex].title ? { ...board, title: newTitle } : board
-        );
-        localStorage.setItem(`shared_boards_${collaborator.id}`, JSON.stringify(updatedCollaboratorBoards));
-      });
-    }
-  };
 
   return (
     <div className="app-container" key={forceUpdate}>
@@ -2095,34 +2032,6 @@ const TaskBoard = ({ user, onLogout }) => {
               >
                 ✕
               </button>
-            </div>
-
-            <div className="board-edit-section">
-              <h4>Nazwa tablicy</h4>
-              <input
-                type="text"
-                className="board-title-edit"
-                value={editingBoardTitle}
-                onChange={(e) => setEditingBoardTitle(e.target.value)}
-                onBlur={() => {
-                  if (editingBoardTitle.trim() && editingBoardTitle !== allBoards[boardEditPanel.boardIndex].title) {
-                    updateBoardTitle(boardEditPanel.boardIndex, editingBoardTitle);
-                  } else {
-                    setEditingBoardTitle(allBoards[boardEditPanel.boardIndex].title);
-                  }
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && editingBoardTitle.trim()) {
-                    e.target.blur();
-                  } else if (e.key === 'Escape') {
-                    setEditingBoardTitle(allBoards[boardEditPanel.boardIndex].title);
-                    e.target.blur();
-                  }
-                }}
-                maxLength="30"
-                placeholder="Nazwa tablicy"
-                autoFocus
-              />
             </div>
 
             {/* Only show background section for owned boards */}
