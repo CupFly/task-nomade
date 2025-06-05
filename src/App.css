@@ -2783,3 +2783,42 @@ input {
 .list-input:focus {
   border-color: var(--primary);
 }
+
+.task-description-container {
+  padding: 0 12px;
+  margin-top: 8px;
+}
+
+.task-description-label {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.task-description-edit {
+  width: 100%;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  padding: 8px;
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--text-primary);
+  background-color: var(--background-light);
+  resize: vertical;
+  min-height: 80px;
+  max-height: 200px;
+  transition: border-color 0.2s ease;
+}
+
+.task-description-edit:focus {
+  border-color: var(--primary);
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(var(--primary-rgb), 0.2);
+}
+
+.task-description-edit::placeholder {
+  color: var(--text-secondary);
+  opacity: 0.7;
+}

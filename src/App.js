@@ -16,6 +16,7 @@ const TaskBoard = ({ user, onLogout }) => {
   const [forceUpdate, setForceUpdate] = useState(0);
   const [editingTaskId, setEditingTaskId] = useState(null);
   const [editingTitle, setEditingTitle] = useState("");
+  const [editingDescription, setEditingDescription] = useState("");
   const [modalPosition, setModalPosition] = useState({ x: 0, y: 0 });
   const [selectedTask, setSelectedTask] = useState(null);
   const [commentInput, setCommentInput] = useState('');
@@ -328,6 +329,50 @@ const TaskBoard = ({ user, onLogout }) => {
   };
 
   /**
+   * Task Description Management
+   * - Descriptions can be edited inline on the task card or in the modal
+   * - Edit mode is triggered by clicking the edit button (✎)
+   * - Changes can be saved with Enter or by clicking outside
+   * - Escape cancels the edit
+   * - Empty descriptions are not allowed
+   * - Only non-observer users can edit descriptions
+   */
+  const updateTaskDescription = (listIndex, taskIndex, newDescription) => {
+    const currentBoard = isSharedBoard ? sharedBoards[currentBoardIndex - boards.length] : boards[currentBoardIndex];
+
+    // Prevent observers from editing descriptions in shared boards
+    if (isSharedBoard) {
+      const userRole = currentBoard.collaborators.find(c => c.id === user.id)?.role;
+      if (userRole === 'observer') return;
+    }
+
+    const updatedBoard = {
+      ...currentBoard,
+      lists: currentBoard.lists.map((list, idx) =>
+        idx === listIndex
+          ? {
+              ...list,
+              tasks: list.tasks.map((task, tIdx) =>
+                tIdx === taskIndex
+                  ? { ...task, description: newDescription }
+                  : task
+              )
+            }
+          : list
+      )
+    };
+    syncBoardChanges(updatedBoard, isSharedBoard);
+
+    // Update modal view if the task is currently selected
+    if (selectedTask && selectedTask.listIndex === listIndex && selectedTask.taskIndex === taskIndex) {
+      setSelectedTask(prev => ({
+        ...prev,
+        task: { ...prev.task, description: newDescription }
+      }));
+    }
+  };
+
+  /**
    * Tworzenie zadań
    * - Nowe zadania są tworzone z domyślnym szarym tłem (rgb(98, 100, 119))
    * - Każde zadanie ma unikalny identyfikator oparty na znaczniku czasu
@@ -356,6 +401,7 @@ const TaskBoard = ({ user, onLogout }) => {
               ...list, 
               tasks: [...list.tasks, { 
                 text: task,
+                description: '',
                 completed: false,
                 createdAt: Date.now(),
                 comments: [],
@@ -892,7 +938,7 @@ const TaskBoard = ({ user, onLogout }) => {
     const taskElement = e.currentTarget.closest('.task');
     const rect = taskElement.getBoundingClientRect();
     
-    // Oblicz pozycję, aby wyśrodkować modal względem zadania
+    // Calculate position to center modal relative to task
     const modalWidth = rect.width + 24;
     const modalPadding = 16;
     const taskPreviewPadding = 16;
@@ -917,9 +963,10 @@ const TaskBoard = ({ user, onLogout }) => {
       }
     });
     setEditingTitle(task.text);
+    setEditingDescription(task.description || '');
     setEditingTaskId(task.id);
 
-    // Ustaw początkową wysokość po małym opóźnieniu, aby upewnić się, że textarea jest wyrenderowana
+    // Set initial height after small delay to ensure textarea is rendered
     setTimeout(() => {
       const textarea = document.querySelector('.task-title-edit');
       if (textarea) {
@@ -1729,7 +1776,7 @@ const TaskBoard = ({ user, onLogout }) => {
             >
               {!isCommentView ? (
                 <>
-                  {/* Podgląd edytowanego zadania */}
+                  {/* Task preview */}
                   <div className="edited-task-preview">
                     <div 
                       className="task" 
@@ -1777,6 +1824,35 @@ const TaskBoard = ({ user, onLogout }) => {
                         />
                       </div>
                     </div>
+                  </div>
+
+                  {/* Description field */}
+                  <div className="task-description-container">
+                    <label className="task-description-label">Opis</label>
+                    <textarea
+                      className="task-description-edit"
+                      value={editingDescription}
+                      onChange={(e) => setEditingDescription(e.target.value)}
+                      onBlur={() => {
+                        updateTaskDescription(selectedTask.listIndex, selectedTask.taskIndex, editingDescription);
+                      }}
+                      placeholder="Add a description..."
+                      rows={4}
+                      style={{ 
+                        width: '100%',
+                        resize: 'vertical',
+                        minHeight: '80px',
+                        maxHeight: '200px',
+                        marginTop: '8px',
+                        padding: '8px',
+                        borderRadius: '4px',
+                        border: '1px solid var(--border-color)',
+                        backgroundColor: 'var(--background-light)',
+                        color: 'var(--text-primary)',
+                        fontSize: '14px',
+                        lineHeight: '1.4'
+                      }}
+                    />
                   </div>
 
                   {/* Sekcja wyboru koloru */}
