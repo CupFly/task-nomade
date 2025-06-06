@@ -53,9 +53,13 @@ const TaskBoard = ({ user, onLogout }) => {
     document.querySelectorAll('.list-table').forEach(list => {
       list.classList.remove('drag-over');
       list.classList.remove('dragging');
+      list.classList.remove('drag-over-left');
+      list.classList.remove('drag-over-right');
     });
     document.querySelectorAll('.task').forEach(task => {
       task.classList.remove('dragging');
+      task.classList.remove('drag-over-top');
+      task.classList.remove('drag-over-bottom');
     });
   };
 
@@ -1242,39 +1246,151 @@ const TaskBoard = ({ user, onLogout }) => {
     }
   };
 
+  const handleDragStart = (e, listIndex, taskIndex) => {
+    if (taskIndex !== undefined) {
+      // Task dragging
+      e.dataTransfer.setData('application/json', JSON.stringify({
+        fromListIndex: listIndex,
+        fromTaskIndex: taskIndex
+      }));
+      e.currentTarget.classList.add('dragging');
+    } else {
+      // List dragging
+      e.dataTransfer.setData('text/plain', listIndex.toString());
+      e.currentTarget.classList.add('dragging');
+    }
+  };
+
   const handleDragOver = (e) => {
     e.preventDefault();
-    const taskData = e.dataTransfer.getData('application/json');
-    if (taskData) {
-      const rect = e.currentTarget.getBoundingClientRect();
-      const y = e.clientY;
-      const tasks = e.currentTarget.querySelectorAll('.task');
+    const list = e.currentTarget;
+    
+    const tasks = list.querySelectorAll('.task:not(.dragging)');
+    const draggingTask = document.querySelector('.task.dragging');
+    const draggingList = document.querySelector('.list-table.dragging');
+    
+    // Remove existing indicators from all lists and tasks first
+    document.querySelectorAll('.list-table').forEach(l => {
+      l.classList.remove('drag-over-left', 'drag-over-right');
+    });
+    tasks.forEach(task => {
+      task.classList.remove('drag-over-top', 'drag-over-bottom');
+    });
+    
+    if (draggingTask) {
+      // Skip if this is the new list button for task dragging
+      if (list.classList.contains('new-list')) {
+        return;
+      }
       
-      // Remove existing indicators
-      tasks.forEach(task => task.classList.remove('drag-over-top', 'drag-over-bottom'));
+      // Add drag-over class to list only when dragging tasks
+      list.classList.add('drag-over');
       
-      // Find the task under the cursor
-      let targetTask = null;
-      
-      tasks.forEach((task, index) => {
-        const taskRect = task.getBoundingClientRect();
-        if (y >= taskRect.top && y <= taskRect.bottom) {
-          targetTask = task;
-        }
-      });
-      
-      if (targetTask) {
-        const taskRect = targetTask.getBoundingClientRect();
-        const threshold = taskRect.top + taskRect.height / 2;
+      // For single task, check if we're above or below it
+      if (tasks.length === 1) {
+        const task = tasks[0];
+        const box = task.getBoundingClientRect();
+        const offset = e.clientY - box.top - box.height / 2;
         
-        if (y < threshold) {
-          targetTask.classList.add('drag-over-top');
+        // Get the current task's position
+        const currentTask = draggingTask.closest('.list-table')?.querySelectorAll('.task');
+        const currentTaskIndex = currentTask ? Array.from(currentTask).indexOf(draggingTask) : -1;
+        const targetTaskIndex = 0;
+        
+        // Only show indicators if we're not at the current position
+        if (currentTaskIndex !== targetTaskIndex) {
+          if (offset < 0) {
+            task.classList.add('drag-over-top');
+          } else {
+            task.classList.add('drag-over-bottom');
+          }
+        }
+      } else {
+        const closestTask = [...tasks].reduce((closest, child) => {
+          const box = child.getBoundingClientRect();
+          const offset = e.clientY - box.top - box.height / 2;
+          
+          if (offset < 0 && offset > closest.offset) {
+            return { offset: offset, element: child };
+          } else {
+            return closest;
+          }
+        }, { offset: Number.NEGATIVE_INFINITY }).element;
+
+        if (closestTask) {
+          // Check if we're closer to the top or bottom of the task
+          const box = closestTask.getBoundingClientRect();
+          const offset = e.clientY - box.top - box.height / 2;
+          
+          // Get the current task's position
+          const currentTask = draggingTask.closest('.list-table')?.querySelectorAll('.task');
+          const currentTaskIndex = currentTask ? Array.from(currentTask).indexOf(draggingTask) : -1;
+          const targetTaskIndex = Array.from(tasks).indexOf(closestTask);
+          
+          // Only show indicators if we're not at the current position
+          if (currentTaskIndex !== targetTaskIndex) {
+            if (offset < 0) {
+              closestTask.classList.add('drag-over-top');
+            } else {
+              closestTask.classList.add('drag-over-bottom');
+            }
+          }
         } else {
-          targetTask.classList.add('drag-over-bottom');
+          // If no closest task found, we're at the end of the list
+          const lastTask = tasks[tasks.length - 1];
+          if (lastTask) {
+            // Only show indicator if we're not already at the end
+            const currentTask = draggingTask.closest('.list-table')?.querySelectorAll('.task');
+            const currentTaskIndex = currentTask ? Array.from(currentTask).indexOf(draggingTask) : -1;
+            if (currentTaskIndex !== tasks.length) {
+              lastTask.classList.add('drag-over-bottom');
+            }
+          }
+        }
+      }
+    } else if (draggingList) {
+      // Handle list dragging
+      const lists = document.querySelectorAll('.list-table:not(.dragging)');
+      const closestList = [...lists].reduce((closest, child) => {
+        const box = child.getBoundingClientRect();
+        const offset = e.clientX - box.left - box.width / 2;
+        
+        if (offset < 0 && offset > closest.offset) {
+          return { offset: offset, element: child };
+        } else {
+          return closest;
+        }
+      }, { offset: Number.NEGATIVE_INFINITY }).element;
+
+      if (closestList) {
+        // Check if we're closer to the left or right of the list
+        const box = closestList.getBoundingClientRect();
+        const offset = e.clientX - box.left - box.width / 2;
+        
+        // Get the current list's position
+        const currentListIndex = Array.from(document.querySelectorAll('.list-table')).indexOf(draggingList);
+        const targetListIndex = Array.from(lists).indexOf(closestList);
+        
+        // Only show indicators if we're not at the current position
+        if (currentListIndex !== targetListIndex) {
+          if (offset < 0) {
+            closestList.classList.add('drag-over-left');
+          } else {
+            closestList.classList.add('drag-over-right');
+          }
+        }
+      } else {
+        // If no closest list found, we're at the end
+        const lastList = lists[lists.length - 1];
+        if (lastList) {
+          // Only show indicator if we're not already at the end
+          const currentListIndex = Array.from(document.querySelectorAll('.list-table')).indexOf(draggingList);
+          if (currentListIndex !== lists.length - 1) {
+            lastList.classList.add('drag-over-right');
+          }
         }
       }
     }
-    e.currentTarget.classList.add('drag-over');
   };
 
   const handleDragLeave = (e) => {
@@ -1283,9 +1399,11 @@ const TaskBoard = ({ user, onLogout }) => {
     const x = e.clientX;
     const y = e.clientY;
     
-    // Only remove classes if cursor is actually outside the element
+    // Only remove indicators if we're actually leaving the element
     if (x <= rect.left || x >= rect.right || y <= rect.top || y >= rect.bottom) {
       e.currentTarget.classList.remove('drag-over');
+      e.currentTarget.classList.remove('drag-over-left');
+      e.currentTarget.classList.remove('drag-over-right');
       e.currentTarget.querySelectorAll('.task').forEach(task => {
         task.classList.remove('drag-over-top', 'drag-over-bottom');
       });
@@ -1294,24 +1412,28 @@ const TaskBoard = ({ user, onLogout }) => {
 
   const handleDrop = (e, listIndex) => {
     e.preventDefault();
-    cleanupDragStates();
-    
     const taskData = e.dataTransfer.getData('application/json');
+    
     if (taskData) {
       const { fromListIndex, fromTaskIndex } = JSON.parse(taskData);
-      const tasks = e.currentTarget.querySelectorAll('.task');
-      let dropIndex = tasks.length; // Default to end of list
+      const tasks = e.currentTarget.querySelectorAll('.task:not(.dragging)');
+      let dropIndex = tasks.length;
       
-      // Find the drop position
-      tasks.forEach((task, index) => {
-        const taskRect = task.getBoundingClientRect();
-        if (e.clientY >= taskRect.top && e.clientY <= taskRect.bottom) {
-          const threshold = taskRect.top + taskRect.height / 2;
-          dropIndex = e.clientY < threshold ? index : index + 1;
+      const afterElement = [...tasks].reduce((closest, child) => {
+        const box = child.getBoundingClientRect();
+        const offset = e.clientY - box.top - box.height / 2;
+        
+        if (offset < 0 && offset > closest.offset) {
+          return { offset: offset, element: child };
+        } else {
+          return closest;
         }
-      });
+      }, { offset: Number.NEGATIVE_INFINITY }).element;
       
-      // Only move if it's a different position
+      if (afterElement) {
+        dropIndex = Array.from(tasks).indexOf(afterElement);
+      }
+      
       if (fromListIndex !== listIndex || fromTaskIndex !== dropIndex) {
         moveTask(fromListIndex, listIndex, fromTaskIndex, dropIndex);
       }
@@ -1321,6 +1443,9 @@ const TaskBoard = ({ user, onLogout }) => {
         moveList(fromIndex, listIndex);
       }
     }
+    
+    // Clean up drag states immediately after drop
+    cleanupDragStates();
   };
 
   // Add effect to focus on new list input
@@ -1332,7 +1457,7 @@ const TaskBoard = ({ user, onLogout }) => {
 
   // Add effect to scroll to new list
   useEffect(() => {
-    if ((isNewList || editingListTitle.index !== null) && boardRef.current) {
+    if (boardRef.current && (isNewList || (editingListTitle.index !== null && editingListTitle.previousTitle === ''))) {
       const board = boardRef.current;
       const lists = board.querySelectorAll('.list-table');
       const targetIndex = editingListTitle.index !== null ? editingListTitle.index : lists.length - 1;
@@ -1349,7 +1474,7 @@ const TaskBoard = ({ user, onLogout }) => {
         });
       }
     }
-  }, [isNewList, editingListTitle.index, currentBoard?.lists.length]);
+  }, [isNewList, editingListTitle.index, editingListTitle.previousTitle, currentBoard?.lists.length]);
 
   // Add function to adjust textarea height
   const adjustTextareaHeight = (textarea) => {
@@ -1506,10 +1631,7 @@ const TaskBoard = ({ user, onLogout }) => {
                 className="list-table" 
                 key={listIndex}
                 draggable={!isSharedBoard || (isSharedBoard && currentBoard.collaborators.find(c => c.id === user.id)?.role !== 'observer')}
-                onDragStart={(e) => {
-                  e.dataTransfer.setData('text/plain', listIndex.toString());
-                  e.currentTarget.classList.add('dragging');
-                }}
+                onDragStart={(e) => handleDragStart(e, listIndex)}
                 onDragEnd={cleanupDragStates}
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
@@ -1631,16 +1753,8 @@ const TaskBoard = ({ user, onLogout }) => {
                       key={taskIndex} 
                       className={`task ${task.completed ? 'completed' : ''}`}
                       draggable={!isSharedBoard || (isSharedBoard && currentBoard.collaborators.find(c => c.id === user.id)?.role !== 'observer')}
-                      onDragStart={(e) => {
-                        e.dataTransfer.setData('application/json', JSON.stringify({
-                          fromListIndex: listIndex,
-                          fromTaskIndex: taskIndex
-                        }));
-                        e.currentTarget.classList.add('dragging');
-                      }}
-                      onDragEnd={(e) => {
-                        cleanupDragStates();
-                      }}
+                      onDragStart={(e) => handleDragStart(e, listIndex, taskIndex)}
+                      onDragEnd={cleanupDragStates}
                       style={{ backgroundColor: task.color || '#ffffff' }}
                       onClick={(e) => {
                         if (!e.target.classList.contains('task-checkbox') && !e.target.classList.contains('edit-task-btn')) {

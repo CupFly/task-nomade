@@ -2713,7 +2713,8 @@ input {
   background: none;
   min-width: 272px;
   border: none;
-  padding: 4px;
+  padding: 4px 4px 4px 20px;
+  margin-left: -16px;
   box-shadow: none;
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
@@ -2872,4 +2873,176 @@ input {
   width: 100%;
   overflow-y: auto;
   flex: 1;
+}
+
+/* Drag and Drop Styles */
+.list-table.dragging {
+  opacity: 0.5;
+  cursor: grabbing !important;
+}
+
+.list-table.drag-over {
+  transition: transform 0.2s ease;
+}
+
+.list-table.drag-over-left::before {
+  content: '';
+  position: absolute;
+  left: -4px;
+  top: 0;
+  height: 100%;
+  width: 4px;
+  background: #2684FF;
+  border-radius: 4px;
+}
+
+.list-table.drag-over-right::after {
+  content: '';
+  position: absolute;
+  right: -4px;
+  top: 0;
+  height: 100%;
+  width: 4px;
+  background: #2684FF;
+  border-radius: 4px;
+}
+
+.task.dragging {
+  opacity: 0.5;
+  cursor: grabbing !important;
+}
+
+.task.drag-over-top::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -2px;
+  height: 4px;
+  background: #2684FF;
+  border-radius: 4px;
+}
+
+.task.drag-over-bottom::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -2px;
+  height: 4px;
+  background: #2684FF;
+  border-radius: 4px;
+}
+
+/* Make tasks and lists look grabbable */
+.task,
+.list-table {
+  cursor: grab;
+}
+
+.task:active,
+.list-table:active {
+  cursor: grabbing;
+}
+
+/* Smooth animations for list reordering */
+.list-table {
+  transition: transform 0.2s ease;
+}
+
+/* Prevent text selection during drag */
+.task *,
+.list-table * {
+  user-select: none;
+}
+
+/* Drag and Drop Styles */
+.task {
+  position: relative;
+  cursor: grab;
+}
+
+.task:active {
+  cursor: grabbing;
+}
+
+.task.dragging {
+  opacity: 0.5;
+  cursor: grabbing;
+}
+
+.task.drag-over-top {
+  position: relative;
+}
+
+.task.drag-over-top::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -2px;
+  height: 4px;
+  background: #2684FF;
+  border-radius: 4px;
+}
+
+.task.drag-over-bottom {
+  position: relative;
+}
+
+.task.drag-over-bottom::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -2px;
+  height: 4px;
+  background: #2684FF;
+  border-radius: 4px;
+}
+
+.list-table {
+  position: relative;
+  cursor: grab;
+}
+
+.list-table:active {
+  cursor: grabbing;
+}
+
+.list-table.dragging {
+  opacity: 0.5;
+  cursor: grabbing;
+}
+
+.list-table.drag-over {
+  border: 2px dashed #2684FF;
+}
+
+/* Prevent text selection during drag */
+.task *,
+.list-table * {
+  user-select: none;
+}
+
+.list-table.drag-over-left::before {
+  content: '';
+  position: absolute;
+  left: -2px;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background-color: #2196F3;
+  border-radius: 2px;
+}
+
+.list-table.drag-over-right::after {
+  content: '';
+  position: absolute;
+  right: -2px;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background-color: #2196F3;
+  border-radius: 2px;
 }
