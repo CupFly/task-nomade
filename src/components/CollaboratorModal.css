@@ -227,7 +227,6 @@
 /* Comments list - also hide scrollbars */
 .comments-list {
   margin-bottom: 20px;
-  max-height: 300px;
   overflow-y: auto;
   scrollbar-width: none;
   -ms-overflow-style: none;

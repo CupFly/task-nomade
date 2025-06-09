@@ -25,6 +25,7 @@ const TaskBoard = ({ user, onLogout }) => {
   const taskInputRef = useRef(null);
   const [boardContextMenu, setBoardContextMenu] = useState({ boardIndex: null, visible: false });
   const [listContextMenu, setListContextMenu] = useState({ listIndex: null, visible: false });
+  const [accountMenu, setAccountMenu] = useState({ visible: false });
   const fileInputRef = useRef(null);
   const [users] = useState(() => JSON.parse(localStorage.getItem('users') || '[]'));
   const [boardEditPanel, setBoardEditPanel] = useState({ visible: false, boardIndex: null });
@@ -35,6 +36,7 @@ const TaskBoard = ({ user, onLogout }) => {
   const boardRef = useRef(null);
   const [editingDescription, setEditingDescription] = useState('');
   const descriptionTextareaRef = useRef(null);
+  const accountButtonRef = useRef(null);
 
   const autoResizeTextarea = (element) => {
     if (element) {
@@ -1491,6 +1493,20 @@ const TaskBoard = ({ user, onLogout }) => {
     }
   }, [selectedTask, editingDescription]);
 
+  // Add click outside handler for account menu
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (accountButtonRef.current && !accountButtonRef.current.contains(event.target)) {
+        setAccountMenu({ visible: false });
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
   return (
     <div className="app-container" key={forceUpdate}>
       <div className="sidebar">
@@ -1498,24 +1514,52 @@ const TaskBoard = ({ user, onLogout }) => {
           <div className="app-title">Task Nomade</div>
         </div>
         
-        <button 
-          className="profile-button"
-          onClick={() => navigate('/profile')}
-        >
-          <div className="profile-info">
-            <div 
-              className="profile-avatar small"
-              style={{
-                backgroundImage: user.profilePicture ? `url(${user.profilePicture})` : 'none',
-                backgroundSize: 'cover',
-                backgroundPosition: 'center'
-              }}
-            >
-              {!user.profilePicture && (user.username ? user.username[0].toUpperCase() : user.email[0].toUpperCase())}
+        <div style={{ position: 'relative' }} ref={accountButtonRef}>
+          <button 
+            className="profile-button"
+            onClick={() => setAccountMenu({ visible: !accountMenu.visible })}
+          >
+            <div className="profile-info">
+              <div 
+                className="profile-avatar small"
+                style={{
+                  backgroundImage: user.profilePicture ? `url(${user.profilePicture})` : 'none',
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center'
+                }}
+              >
+                {!user.profilePicture && (user.username ? user.username[0].toUpperCase() : user.email[0].toUpperCase())}
+              </div>
+              <h1>{user.username || user.email}</h1>
             </div>
-            <h1>{user.username || user.email}</h1>
-          </div>
-        </button>
+          </button>
+          
+          {accountMenu.visible && (
+            <div className="account-menu">
+              <button 
+                className="account-menu-item"
+                onClick={() => {
+                  navigate('/profile');
+                  setAccountMenu({ visible: false });
+                }}
+              >
+                <span className="icon">👤</span>
+                Profil
+              </button>
+              <button 
+                className="account-menu-item"
+                style={{borderRadius: '0px 0px 8px 8px'}}
+                onClick={() => {
+                  handleLogout();
+                  setAccountMenu({ visible: false });
+                }}
+              >
+                <span className="icon" style={{marginLeft: '2px', marginRight: '11px', color: '#bf0000'}}>⍈</span>
+                Wyloguj
+              </button>
+            </div>
+          )}
+        </div>
 
         <div className="boards-navigation">
           <div className="board-tabs">
@@ -2146,6 +2190,76 @@ const TaskBoard = ({ user, onLogout }) => {
               >
                 ✕
               </button>
+            </div>
+
+            <div className="board-edit-section">
+              <h4>Nazwa tablicy</h4>
+              <input
+                type="text"
+                className="board-title-input"
+                value={allBoards[boardEditPanel.boardIndex]?.title || ''}
+                onChange={(e) => {
+                  const updatedBoard = {
+                    ...allBoards[boardEditPanel.boardIndex],
+                    title: e.target.value
+                  };
+                  if (boardEditPanel.boardIndex < boards.length) {
+                    const newBoards = boards.map((board, index) =>
+                      index === boardEditPanel.boardIndex ? updatedBoard : board
+                    );
+                    setBoards(newBoards);
+                    localStorage.setItem(`boards_${user.id}`, JSON.stringify(newBoards));
+
+                    // Update for all collaborators
+                    const currentBoard = boards[boardEditPanel.boardIndex];
+                    currentBoard.collaborators?.forEach(collaborator => {
+                      const collaboratorBoards = JSON.parse(localStorage.getItem(`shared_boards_${collaborator.id}`) || '[]');
+                      const updatedCollaboratorBoards = collaboratorBoards.map(board =>
+                        board.title === currentBoard.title ? updatedBoard : board
+                      );
+                      localStorage.setItem(`shared_boards_${collaborator.id}`, JSON.stringify(updatedCollaboratorBoards));
+                    });
+
+                    // Update for the owner if it's a shared board
+                    if (currentBoard.ownerId && currentBoard.ownerId !== user.id) {
+                      const ownerBoards = JSON.parse(localStorage.getItem(`boards_${currentBoard.ownerId}`) || '[]');
+                      const updatedOwnerBoards = ownerBoards.map(board =>
+                        board.title === currentBoard.title ? updatedBoard : board
+                      );
+                      localStorage.setItem(`boards_${currentBoard.ownerId}`, JSON.stringify(updatedOwnerBoards));
+                    }
+                  } else {
+                    const newSharedBoards = sharedBoards.map((board, index) =>
+                      index === boardEditPanel.boardIndex - boards.length ? updatedBoard : board
+                    );
+                    setSharedBoards(newSharedBoards);
+                    localStorage.setItem(`shared_boards_${user.id}`, JSON.stringify(newSharedBoards));
+
+                    // Update for the owner
+                    const currentBoard = sharedBoards[boardEditPanel.boardIndex - boards.length];
+                    if (currentBoard.ownerId) {
+                      const ownerBoards = JSON.parse(localStorage.getItem(`boards_${currentBoard.ownerId}`) || '[]');
+                      const updatedOwnerBoards = ownerBoards.map(board =>
+                        board.title === currentBoard.title ? updatedBoard : board
+                      );
+                      localStorage.setItem(`boards_${currentBoard.ownerId}`, JSON.stringify(updatedOwnerBoards));
+                    }
+
+                    // Update for other collaborators
+                    currentBoard.collaborators?.forEach(collaborator => {
+                      if (collaborator.id !== user.id) {
+                        const collaboratorBoards = JSON.parse(localStorage.getItem(`shared_boards_${collaborator.id}`) || '[]');
+                        const updatedCollaboratorBoards = collaboratorBoards.map(board =>
+                          board.title === currentBoard.title ? updatedBoard : board
+                        );
+                        localStorage.setItem(`shared_boards_${collaborator.id}`, JSON.stringify(updatedCollaboratorBoards));
+                      }
+                    });
+                  }
+                }}
+                maxLength="30"
+                placeholder="Nazwa tablicy"
+              />
             </div>
 
             {/* Only show background section for owned boards */}
