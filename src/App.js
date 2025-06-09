@@ -22,6 +22,7 @@ const TaskBoard = ({ user, onLogout }) => {
   const [isCommentView, setIsCommentView] = useState(false);
   const [addingTaskToList, setAddingTaskToList] = useState(null);
   const [newTaskText, setNewTaskText] = useState('');
+  const [isSidebarVisible, setIsSidebarVisible] = useState(true);
   const taskInputRef = useRef(null);
   const [boardContextMenu, setBoardContextMenu] = useState({ boardIndex: null, visible: false });
   const [listContextMenu, setListContextMenu] = useState({ listIndex: null, visible: false });
@@ -1508,8 +1509,8 @@ const TaskBoard = ({ user, onLogout }) => {
   }, []);
 
   return (
-    <div className="app-container" key={forceUpdate}>
-      <div className="sidebar">
+    <div className="app-container">
+      <div className={`sidebar ${isSidebarVisible ? '' : 'hidden'}`}>
         <div className="app-header">
           <div className="app-title">Task Nomade</div>
         </div>
@@ -1653,8 +1654,13 @@ const TaskBoard = ({ user, onLogout }) => {
           </div>
         </div>
       </div>
-
-      <div className="main-content">
+      <button 
+        className="sidebar-toggle"
+        onClick={() => setIsSidebarVisible(!isSidebarVisible)}
+      >
+        {isSidebarVisible ? '◀' : '▶'}
+      </button>
+      <div className={`main-content ${isSidebarVisible ? '' : 'expanded'}`}>
         {currentBoard && (
           <div 
             className="board" 
