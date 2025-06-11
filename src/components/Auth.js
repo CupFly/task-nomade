@@ -1,7 +1,7 @@
 /**
  * Authentication Component
  * Handles user registration and login functionality
- * Features:
+ * Features: wolniak 
  * - User registration with optional username
  * - Email format validation
  * - Password requirements (min 6 characters)
